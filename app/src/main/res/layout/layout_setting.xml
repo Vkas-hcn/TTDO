@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ll_setting"
+    android:layout_width="280dp"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_nav_op"
+    android:orientation="vertical">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="82dp"
+        android:src="@drawable/ic_nav_logo" />
+
+    <TextView
+        android:id="@+id/tv_pp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="34dp"
+        android:background="@drawable/bg_nav_item_op"
+        android:drawableEnd="@drawable/ic_nav_be"
+        android:drawablePadding="8dp"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="15dp"
+        android:text="Private policy"
+        android:textColor="#FF333333"
+        android:textSize="14sp" />
+
+</LinearLayout>

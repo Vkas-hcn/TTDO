@@ -1,0 +1,476 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="android.view.View" />
+
+        <variable
+            name="serviceState"
+            type="String"
+            android:value="0" />
+
+        <variable
+            name="agreement"
+            type="String"
+            android:value="0" />
+
+        <variable
+            name="showGuide"
+            type="Boolean"
+            android:value="false" />
+
+
+    </data>
+    <androidx.drawerlayout.widget.DrawerLayout
+        android:id="@+id/dl_main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/black">
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/bg_main_top"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:id="@+id/img_setting"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginTop="30dp"
+                android:layout_marginEnd="10dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_settings"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/tv_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat"
+                android:text="00：00"
+                android:textColor="#FFFFFFFF"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/img_setting" />
+
+            <LinearLayout
+                android:id="@+id/ll_connect"
+                android:layout_width="160dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_connect_op"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:padding="7dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_time">
+
+                <ImageView
+                    android:id="@+id/img_heart_1"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/ic_heart_1" />
+
+                <ImageView
+                    android:id="@+id/img_loading"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:src="@drawable/ic_loading" />
+
+                <ImageView
+                    android:id="@+id/img_heart_2"
+                    android:layout_width="30dp"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_heart_2" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_country"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15sp"
+                android:fontFamily="@font/montserrat"
+                android:text="·Australia·"
+                android:textColor="#FFE6FF48"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/imageView" />
+
+            <TextView
+                android:id="@+id/tv_state"
+                android:layout_width="66dp"
+                android:layout_height="16dp"
+                android:text="connected"
+                android:textColor="#FFFFFFFF"
+                android:textSize="14sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_country" />
+
+            <ImageView
+                android:id="@+id/img_connect"
+                android:layout_width="173dp"
+                android:layout_height="173dp"
+                android:layout_marginTop="12dp"
+                android:src="@drawable/ic_connect_1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_state" />
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/lav_connect"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                app:layout_constraintBottom_toBottomOf="@+id/img_connect"
+                app:layout_constraintEnd_toEndOf="@+id/img_connect"
+                app:layout_constraintStart_toStartOf="@+id/img_connect"
+                app:layout_constraintTop_toTopOf="@+id/img_connect"
+                android:visibility="invisible"
+                app:lottie_autoPlay="true"
+                app:lottie_fileName="center.json"
+                app:lottie_loop="true" />
+            <LinearLayout
+                android:id="@+id/linearLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_service_main"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:padding="10dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/img_connect">
+
+                <ImageView
+                    android:id="@+id/img_flag"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/ic_fast" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="16dp"
+                    android:layout_marginStart="13dp"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/roboto"
+                    android:text="Australia"
+                    android:textColor="#FF000000"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/img_be"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/ic_main_be" />
+            </LinearLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_speed_main"
+                android:orientation="vertical"
+                android:padding="8dp"
+                app:layout_constraintTop_toBottomOf="@+id/linearLayout">
+
+                <LinearLayout
+                    android:id="@+id/ll_up"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_up"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    app:layout_constraintEnd_toStartOf="@+id/ll_dow"
+                    app:layout_constraintHorizontal_weight="1"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <TextView
+                        android:id="@+id/tv_up"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/roboto"
+                        android:text="0/kb"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_up_tip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/roboto"
+                        android:text="Upload"
+                        android:textColor="#FFADADAD"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/ll_dow"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_marginStart="20dp"
+                    android:background="@drawable/bg_dow"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_weight="1"
+                    app:layout_constraintStart_toEndOf="@+id/ll_up"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <TextView
+                        android:id="@+id/tv_dow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/roboto"
+                        android:text="0/kb"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_dow_tip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/roboto"
+                        android:text="DowLoad"
+                        android:textColor="#FFADADAD"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_a_q_op"
+                    android:orientation="horizontal"
+                    android:padding="4dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/ll_up">
+
+                    <TextView
+                        android:id="@+id/tv_auto"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_auto_text_op"
+                        android:fontFamily="@font/roboto"
+                        android:gravity="center"
+                        android:paddingVertical="4dp"
+                        android:text="Auto"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_ss"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/roboto"
+                        android:gravity="center"
+                        android:paddingVertical="4dp"
+                        android:text="SS"
+                        android:textColor="#898A8B"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_open"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/roboto"
+                        android:gravity="center"
+                        android:paddingVertical="4dp"
+                        android:text="OpenVpn"
+                        android:textColor="#898A8B"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <FrameLayout
+                android:id="@+id/fl_ad"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_margin="12dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+
+                <ImageView
+                    android:id="@+id/img_ad_type"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/ic_ad_type" />
+
+                <com.google.android.gms.ads.nativead.NativeAdView
+                    android:id="@+id/native_ad_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_speed_main"
+                        android:padding="5dp"
+                        android:orientation="horizontal">
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:id="@+id/linearLayout2"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:id="@+id/ad_app_icon"
+                                android:layout_width="39dp"
+                                android:layout_height="39dp"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginTop="18sp"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                            <TextView
+                                android:id="@+id/ad_headline"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:drawablePadding="3dp"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="High schoolEscape 2"
+                                android:textColor="#FFFFFFFF"
+                                android:textSize="10sp"
+                                android:fontFamily="@font/roboto"
+                                android:layout_marginStart="12dp"
+                                app:layout_constraintBottom_toBottomOf="@+id/ad_app_icon"
+                                app:layout_constraintStart_toEndOf="@+id/ad_app_icon"
+                                app:layout_constraintTop_toTopOf="@+id/ad_app_icon" />
+
+                            <TextView
+                                android:id="@+id/ad_call_to_action"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_button_op"
+                                android:gravity="center"
+                                android:layout_marginTop="16sp"
+                                android:paddingVertical="8dp"
+                                android:paddingHorizontal="15sp"
+                                android:text="Install"
+                                android:textColor="#FFFFFFFF"
+                                android:textSize="12sp"
+                                app:layout_constraintStart_toStartOf="@+id/ad_app_icon"
+                                app:layout_constraintTop_toBottomOf="@+id/ad_app_icon" />
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+
+                        <com.google.android.gms.ads.nativead.MediaView
+                            android:id="@+id/ad_media"
+                            android:layout_width="173dp"
+                            android:layout_height="110dp"
+                            android:layout_gravity="center_horizontal"
+                            android:foregroundGravity="left|top" />
+
+
+                    </LinearLayout>
+
+                </com.google.android.gms.ads.nativead.NativeAdView>
+            </FrameLayout>
+
+            <ProgressBar
+                android:id="@+id/pb_loading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <View
+                android:id="@+id/view_guide_smile"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="@{showGuide ? View.VISIBLE : View.GONE}"
+                android:background="#87000000" />
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/lav_smile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="70dp"
+                android:visibility="@{showGuide ? View.VISIBLE : View.GONE}"
+                app:layout_constraintBottom_toBottomOf="@+id/ll_connect"
+                app:layout_constraintEnd_toEndOf="@+id/ll_connect"
+                app:layout_constraintStart_toStartOf="@+id/ll_connect"
+                app:layout_constraintTop_toTopOf="@+id/ll_connect"
+                app:lottie_autoPlay="true"
+                app:lottie_fileName="hand.json"
+                app:lottie_loop="true" />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+        <LinearLayout
+            android:id="@+id/ll_setting"
+            android:layout_width="280dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="start"
+            android:background="@drawable/bg_nav_op"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="82dp"
+                android:src="@drawable/ic_nav_logo" />
+
+            <TextView
+                android:id="@+id/tv_pp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="34dp"
+                android:background="@drawable/bg_nav_item_op"
+                android:drawableEnd="@drawable/ic_nav_be"
+                android:drawablePadding="8dp"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="15dp"
+                android:text="Private policy"
+                android:textColor="#FF333333"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+    </androidx.drawerlayout.widget.DrawerLayout>
+</layout>

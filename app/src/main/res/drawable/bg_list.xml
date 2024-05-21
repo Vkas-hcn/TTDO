@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 总体边框层 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#0000FF" /> <!-- 黑色 -->
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+    <!-- 上边框 -->
+    <item android:top="3dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#000000" /> <!-- 蓝色 -->
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+    <!-- 主要背景层 -->
+    <item
+        android:left="2dp"
+        android:right="2dp"
+        android:top="3dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFFF" /> <!-- 白色 -->
+            <corners
+                android:bottomLeftRadius="0dp"
+                android:bottomRightRadius="0dp"
+                android:topLeftRadius="8dp"
+                android:topRightRadius="8dp" />
+        </shape>
+    </item>
+</layer-list>
+
