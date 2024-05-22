@@ -107,7 +107,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15sp"
                 android:fontFamily="@font/montserrat"
-                android:text="·Australia·"
+                android:text="·Fast Service·"
                 android:textColor="#FFE6FF48"
                 android:textSize="26sp"
                 android:textStyle="bold"
@@ -117,9 +117,9 @@
 
             <TextView
                 android:id="@+id/tv_state"
-                android:layout_width="66dp"
-                android:layout_height="16dp"
-                android:text="connected"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Disconnected"
                 android:textColor="#FFFFFFFF"
                 android:textSize="14sp"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -168,6 +168,7 @@
                     android:src="@drawable/ic_fast" />
 
                 <TextView
+                    android:id="@+id/tv_country_name"
                     android:layout_width="0dp"
                     android:layout_height="16dp"
                     android:layout_marginStart="13dp"
@@ -325,14 +326,14 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <View
-                android:id="@+id/view_guide_smile"
+                android:id="@+id/view_guide_dual"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:visibility="@{showGuide ? View.VISIBLE : View.GONE}"
                 android:background="#87000000" />
 
             <com.airbnb.lottie.LottieAnimationView
-                android:id="@+id/lav_smile"
+                android:id="@+id/lav_dual"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="70dp"

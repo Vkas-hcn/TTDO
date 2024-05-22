@@ -1,4 +1,4 @@
-package com.pink.hami.melon.dual.option.model
+package com.pink.hami.melon.dual.option.funutils
 
 import androidx.lifecycle.ViewModel
 import android.app.AlertDialog
@@ -14,8 +14,7 @@ import com.google.gson.Gson
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.ui.list.VerticalSpaceItemDecoration
 
-class ListViewModel : ViewModel() {
-    lateinit var skVpnServiceBean: VpnServiceBean
+class ListFunHelp : ViewModel() {
     lateinit var allVpnListData: MutableList<VpnServiceBean>
     lateinit var listServiceAdapter: ListServiceAdapter
     var ecVpnServiceBeanList: MutableList<VpnServiceBean> = ArrayList()

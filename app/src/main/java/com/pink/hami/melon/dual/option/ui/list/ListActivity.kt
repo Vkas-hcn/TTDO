@@ -6,13 +6,13 @@ import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.base.BaseActivity
 import com.pink.hami.melon.dual.option.bean.VpnServiceBean
 import com.pink.hami.melon.dual.option.databinding.ActivityListBinding
-import com.pink.hami.melon.dual.option.model.ListViewModel
+import com.pink.hami.melon.dual.option.funutils.ListFunHelp
 import com.pink.hami.melon.dual.option.utils.DualContext
 import com.google.gson.Gson
-import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getSmileImage
+import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getDualImage
 
-class ListActivity : BaseActivity<ActivityListBinding, ListViewModel>(
-    R.layout.activity_list, ListViewModel::class.java
+class ListActivity : BaseActivity<ActivityListBinding, ListFunHelp>(
+    R.layout.activity_list, ListFunHelp::class.java
 ) {
     override fun initViewComponents() {
         setupListeners()
@@ -85,7 +85,7 @@ class ListActivity : BaseActivity<ActivityListBinding, ListViewModel>(
 
     private fun displayCountryAndCity(vpnServiceBean: VpnServiceBean) {
         binding.tvCountryList.text = String.format("${vpnServiceBean.country_name},${vpnServiceBean.city}")
-        binding.imgFlagList.setImageResource(vpnServiceBean.country_name.getSmileImage())
+        binding.imgFlagList.setImageResource(vpnServiceBean.country_name.getDualImage())
     }
 
     private fun setupAdapter() {

@@ -17,12 +17,10 @@ import androidx.preference.PreferenceDataStore
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.app.App.Companion.TAG
 import com.pink.hami.melon.dual.option.base.BaseActivity
-import com.pink.hami.melon.dual.option.model.MainViewModel
+import com.pink.hami.melon.dual.option.funutils.MainFunHelp
 import com.pink.hami.melon.dual.option.ui.wwwwgidasd.aaagggg.AgreementActivity
 import com.pink.hami.melon.dual.option.utils.DualContext
 import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils
-import com.pink.hami.melon.dual.option.utils.DualSjHelp
-import com.pink.hami.melon.dual.option.utils.TimeUtils
 import com.github.shadowsocks.aidl.IShadowsocksService
 import com.github.shadowsocks.aidl.ShadowsocksConnection
 import com.github.shadowsocks.bg.BaseService
@@ -35,22 +33,20 @@ import de.blinkt.openvpn.api.ExternalOpenVPNService
 import de.blinkt.openvpn.api.IOpenVPNAPIService
 import de.blinkt.openvpn.api.IOpenVPNStatusCallback
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.databinding.ActivityMainBinding
+import com.pink.hami.melon.dual.option.utils.TimerObservers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 
-class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
-    R.layout.activity_main, MainViewModel::class.java
+class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
+    R.layout.activity_main, MainFunHelp::class.java
 ),
     ShadowsocksConnection.Callback,
-    OnPreferenceDataStoreChangeListener, TimeUtils.TimeUtilsListener {
-    var showHomeJob: Job? = null
-
+    OnPreferenceDataStoreChangeListener {
     override fun initViewComponents() {
         clickListener()
         initVpnSetting()
@@ -63,6 +59,11 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
                 viewModel.clickChange(this@MainActivity, nextFun = {
                     finish()
                 })
+            }
+        }
+        TimerObservers.addObserver { timeString ->
+            runOnUiThread {
+                binding.tvTime.text = timeString
             }
         }
     }
@@ -82,9 +83,9 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
         } else {
             binding.showGuide = !App.vpnLink
         }
-        viewModel.timeUtils = TimeUtils().apply {
-            setListener(this@MainActivity)
-        }
+//        viewModel.timeUtils = TimeUtils().apply {
+//            setListener(this@MainActivity)
+//        }
 
         binding.imgConnect.setOnClickListener {
             toClickConnect()
@@ -94,12 +95,12 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
                 toClickConnect()
             })
         }
-        binding.lavSmile.setOnClickListener {
+        binding.lavDual.setOnClickListener {
             viewModel.clickChange(this, nextFun = {
                 toClickConnect()
             })
         }
-        binding.viewGuideSmile.setOnClickListener {
+        binding.viewGuideDual.setOnClickListener {
         }
 
         binding.imgSetting.setOnClickListener {
@@ -334,14 +335,14 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
             when (state) {
                 "CONNECTED" -> {
                     App.vpnLink = true
-                    viewModel.connectOrDisconnectSmile(this@MainActivity, true)
+                    viewModel.connectOrDisconnectDual(this@MainActivity, true)
                     viewModel.changeState(
                         state = BaseService.State.Idle,
                         this@MainActivity,
                         App.vpnLink
                     )
 //                    binding.serviceState = "2"
-                    handleSmileTimerLock()
+                    handleDualTimerLock()
                 }
 
                 "RECONNECTING", "EXITING", "CONNECTRETRY" -> {
@@ -351,13 +352,13 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
                 "NOPROCESS" -> {
                     viewModel.mService?.disconnect()
                     App.vpnLink = false
-                    viewModel.connectOrDisconnectSmile(this@MainActivity, true)
+                    viewModel.connectOrDisconnectDual(this@MainActivity, true)
                     viewModel.changeState(
                         state = BaseService.State.Idle,
                         this@MainActivity,
                         App.vpnLink
                     )
-                    handleSmileTimerLock()
+                    handleDualTimerLock()
                 }
 
 
@@ -382,12 +383,12 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
     private fun handleWarmBoot() {
     }
 
-    private fun handleSmileTimerLock() {
+    private fun handleDualTimerLock() {
         if (App.vpnLink) {
             binding.showGuide = false
             viewModel.changeOfVpnStatus(this, "2")
             if (binding.tvTime.text.toString() == "00:00:00") {
-                DualSjHelp.startTiming()
+//                DualSjHelp.startTiming()
             }
         } else {
             viewModel.changeOfVpnStatus(this, "0")
@@ -409,6 +410,11 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
         DataStore.publicStore.unregisterChangeListener(this)
         viewModel.connection.disconnect(this)
         App.isBoot = false
+        TimerObservers.removeObserver { timeString ->
+            runOnUiThread {
+                binding.tvTime.text = timeString
+            }
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -464,13 +470,13 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
     private fun setSsVpnState(canStop: Boolean) {
         if (DualContext.localStorage.connection_mode != "1") {
             App.vpnLink = canStop
-            handleSmileTimerLock()
+            handleDualTimerLock()
         }
     }
 
     private fun setOpenVpnState() {
         if (DualContext.localStorage.connection_mode == "1") {
-            handleSmileTimerLock()
+            handleDualTimerLock()
         }
     }
 
@@ -483,9 +489,4 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
         }
     }
 
-    override fun onTimeChanged() {
-        lifecycleScope.launch {
-            binding.tvTime.text = DualSjHelp.getTiming()
-        }
-    }
 }

@@ -1,4 +1,4 @@
-package com.pink.hami.melon.dual.option.model
+package com.pink.hami.melon.dual.option.funutils
 
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -7,14 +7,14 @@ import androidx.lifecycle.ViewModel
 import com.pink.hami.melon.dual.option.databinding.ActivityWebNetBinding
 import com.pink.hami.melon.dual.option.utils.DualContext
 
-class WebViewModel:ViewModel() {
+class WebFunHelp:ViewModel() {
     fun initWeb(binding : ActivityWebNetBinding){
-        binding.webViewSmile.loadUrl(DualContext.web_dualLoadile_url)
-        binding.webViewSmile.settings.javaScriptEnabled = true
-        binding.webViewSmile.webChromeClient = object : WebChromeClient() {
+        binding.webViewDual.loadUrl(DualContext.web_dualLoadile_url)
+        binding.webViewDual.settings.javaScriptEnabled = true
+        binding.webViewDual.webChromeClient = object : WebChromeClient() {
 
         }
-        binding.webViewSmile.webViewClient = object : WebViewClient() {
+        binding.webViewDual.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                 if (url?.startsWith("http") == true) {
                     view?.loadUrl(url)

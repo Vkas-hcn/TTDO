@@ -19,41 +19,28 @@ object DualONlineFun {
     val smileNetManager = DualOnlineFac(App.getAppContext())
 
     suspend fun getOnlyIp() = withContext(Dispatchers.IO) {
-        try {
-            val url = URL("https://ifconfig.me/ip")
-            val inputStream = url.openStream()
-            val content = inputStream.bufferedReader().use { it.readText() }
-
+        fetchIpFromUrl("https://ifconfig.me/ip") { content ->
             DualContext.localStorage.ip_lo_dualLoad = content
-        } catch (e: Exception) {
         }
     }
 
     suspend fun getLoadIp() = withContext(Dispatchers.IO) {
-        try {
-            val url = URL("https://api.infoip.io/")
-            val inputStream = url.openStream()
-            val content = inputStream.bufferedReader().use { it.readText() }
-            val data = content.split("\"country_short\":\"")[1].split("\"")[0]
-            DualContext.localStorage.ip_gsd = data
-        } catch (e: Exception) {
+        fetchIpFromUrl("https://api.infoip.io/") { content ->
+            val countryCode = extractCountryCode(content)
+            DualContext.localStorage.ip_gsd = countryCode
         }
     }
 
     suspend fun getLoadOthIp() = withContext(Dispatchers.IO) {
-        try {
-            val url = URL("https://ipinfo.io/json")
-            val inputStream = url.openStream()
-            val content = inputStream.bufferedReader().use { it.readText() }
-            val data = content.split("\"country\":\"")[1].split("\"")[0]
-            DualContext.localStorage.ip_gsd_oth = data
-        } catch (e: Exception) {
+        fetchIpFromUrl("https://ipinfo.io/json") { content ->
+            val countryCode = extractCountryCodeFromJson(content)
+            DualContext.localStorage.ip_gsd_oth = countryCode
         }
     }
 
     suspend fun getBlackData(context: Context) = withContext(Dispatchers.IO) {
-        val data = DualContext.localStorage.local_clock
-        if (data.isEmpty()) {
+        val localClock = DualContext.localStorage.local_clock
+        if (localClock.isEmpty()) {
             val params = blackData(context)
             try {
                 smileNetManager.getMapRequest(
@@ -61,109 +48,105 @@ object DualONlineFun {
                     params,
                     object : DualOnlineFac.Callback {
                         override fun onSuccess(response: String) {
-                            Log.e(TAG, "getBlackData-onSuccess: $response", )
+                            Log.d(TAG, "BlackData-Success: $response", )
                             DualContext.localStorage.local_clock = response
                         }
 
                         override fun onFailure(error: String) {
-                            Log.e(TAG, "getBlackData-onFailure: $error", )
-                            nextBlackFun(context)
+                            Log.d(TAG, "BlackData-onFailure: $error", )
+
+                            scheduleRetry(context)
                         }
                     })
             } catch (e: Exception) {
-                nextBlackFun(context)
+                scheduleRetry(context)
             }
         }
     }
 
-    private fun nextBlackFun(context: Context) {
+    private fun scheduleRetry(context: Context) {
         GlobalScope.launch(Dispatchers.IO) {
             delay(10000)
             getBlackData(context)
         }
     }
 
-
     @SuppressLint("HardwareIds")
     fun blackData(context: Context): Map<String, Any> {
-        return mapOf<String, Any>(
-            //bundle_id
-            "strata" to ("com.writeonline.pennetproxy"),
-            //os
+        return mapOf(
+            "strata" to "com.writeonline.pennetproxy",
             "slivery" to "ryder",
-            //app_version
-            "megaword" to (getAppVersion(context) ?: ""),
-            //distinct_id
+            "megaword" to getAppVersion(context).orEmpty(),
             "director" to DualContext.localStorage.uuid_dualLoadile,
-            //client_ts
-            "teammate" to (System.currentTimeMillis()),
-
-            //device_model
+            "teammate" to System.currentTimeMillis(),
             "hannah" to Build.MODEL,
-            //os_version
             "act" to Build.VERSION.RELEASE,
-            //gaid
             "receive" to DualContext.gidData,
-            //android_id
-            "twenty" to Settings.Secure.getString(
-                context.contentResolver,
-                Settings.Secure.ANDROID_ID
-            ),
+            "twenty" to Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
         )
     }
 
     private fun getAppVersion(context: Context): String? {
-        try {
+        return try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-
-            return packageInfo.versionName
+            packageInfo.versionName
         } catch (e: PackageManager.NameNotFoundException) {
             e.printStackTrace()
+            null
         }
-        return null
     }
 
-    fun postPotIntData(context: Context, name: String, key: String? = null, time: Int = 0) {
+    private fun emitPointData(context: Context, name: String, key: String? = null, time: Int = 0) {
         val data = if (key != null) {
             PutDataUtils.getTbaTimeDataJson(context, name, key, time)
         } else {
             PutDataUtils.getTbaDataJson(context, name)
         }
-        Log.e(TAG, "postPotIntData--${name}: data=${data}")
         try {
-            smileNetManager.postPutData(
-                DualContext.put_data_url,
-                data,
-                object : DualOnlineFac.Callback {
-                    override fun onSuccess(response: String) {
-                        Log.e(TAG, "postPotIntData--${name}: onSuccess=${response}")
-                    }
+            smileNetManager.postPutData(DualContext.put_data_url, data, object : DualOnlineFac.Callback {
+                override fun onSuccess(response: String) {
+                    Log.e(TAG, "emitPointData--$name: onSuccess=$response")
+                }
 
-                    override fun onFailure(error: String) {
-                        Log.e(TAG, "postPotIntData--${name}: onFailure=${error}")
-
-                    }
-                })
+                override fun onFailure(error: String) {
+                    Log.e(TAG, "emitPointData--$name: onFailure=$error")
+                }
+            })
         } catch (e: Exception) {
-            Log.e(TAG, "postPotIntData--${name}: Exception=${e}")
+            Log.e(TAG, "emitPointData--$name: Exception=$e")
         }
     }
 
-
-    fun getOnlineSmData(context: Context) {
+    fun landingRemoteData(context: Context) {
         val timeStart = System.currentTimeMillis()
-        postPotIntData(context, "blom1")
+        emitPointData(context, "blom1")
         smileNetManager.getServiceData(DualContext.put_dualLoad_service_data_url, {
             val data = DulaShowDataUtils.dropReversed(it)
             DualContext.localStorage.vpn_online_data_dualLoad = data
-            Log.e(TAG, "getOnlineSmData: ${DualContext.localStorage.vpn_online_data_dualLoad}")
-            val timeEnd = (System.currentTimeMillis() - timeStart) / 1000
-            postPotIntData(context, "blom2t", "time", timeEnd.toInt())
-            postPotIntData(context, "blom2")
-
+            val timeEnd = ((System.currentTimeMillis() - timeStart) / 1000).toInt()
+            emitPointData(context, "blom2t", "time", timeEnd)
+            emitPointData(context, "blom2")
         }, {
-            Log.e(TAG, "getOnlineSmData---error=: ${it}")
-
+            Log.e(TAG, "landingRemoteData---error=: $it")
         })
+    }
+
+    private suspend fun fetchIpFromUrl(urlString: String, onContentFetched: (String) -> Unit) {
+        try {
+            val url = URL(urlString)
+            val inputStream = url.openStream()
+            val content = inputStream.bufferedReader().use { it.readText() }
+            onContentFetched(content)
+        } catch (e: Exception) {
+            Log.e(TAG, "fetchIpFromUrl error: ${e.message}")
+        }
+    }
+
+    private fun extractCountryCode(content: String): String {
+        return content.split("\"country_short\":\"")[1].split("\"")[0]
+    }
+
+    private fun extractCountryCodeFromJson(content: String): String {
+        return content.split("\"country\":\"")[1].split("\"")[0]
     }
 }

@@ -11,7 +11,7 @@ import android.util.Base64
 import com.pink.hami.melon.dual.option.R
 
 object DulaShowDataUtils {
-    fun String.getSmileImage():  Int {
+    fun String.getDualImage():  Int {
         return when (this) {
             "United States" -> R.drawable.unitedstates
             "Australia" -> R.drawable.australia

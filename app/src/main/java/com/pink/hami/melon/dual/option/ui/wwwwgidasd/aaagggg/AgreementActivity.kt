@@ -2,11 +2,11 @@ package com.pink.hami.melon.dual.option.ui.wwwwgidasd.aaagggg
 
 import com.pink.hami.melon.dual.option.base.BaseActivity
 import com.pink.hami.melon.dual.option.databinding.ActivityWebNetBinding
-import com.pink.hami.melon.dual.option.model.WebViewModel
+import com.pink.hami.melon.dual.option.funutils.WebFunHelp
 import com.pink.hami.melon.dual.option.R
 
-class AgreementActivity : BaseActivity<ActivityWebNetBinding, WebViewModel>(
-    R.layout.activity_web_net, WebViewModel::class.java
+class AgreementActivity : BaseActivity<ActivityWebNetBinding, WebFunHelp>(
+    R.layout.activity_web_net, WebFunHelp::class.java
 ) {
 
 

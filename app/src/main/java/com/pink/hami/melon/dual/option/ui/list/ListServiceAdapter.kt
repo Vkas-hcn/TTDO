@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.bean.VpnServiceBean
-import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getSmileImage
+import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getDualImage
 
 class ListServiceAdapter(private val dataList: MutableList<VpnServiceBean>) :
     RecyclerView.Adapter<ListServiceAdapter.ViewHolder>() {
@@ -69,7 +69,7 @@ class ListServiceAdapter(private val dataList: MutableList<VpnServiceBean>) :
                 holder.aivFlag.setImageResource(R.drawable.ic_fast)
             } else {
                 holder.tvName.text = String.format(item.country_name + "," + item.city)
-                holder.aivFlag.setImageResource(item.country_name.getSmileImage())
+                holder.aivFlag.setImageResource(item.country_name.getDualImage())
             }
 
             if (item.check_dualLoad && App.vpnLink) {

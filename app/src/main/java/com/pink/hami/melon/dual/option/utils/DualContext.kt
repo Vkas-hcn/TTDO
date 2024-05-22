@@ -6,7 +6,7 @@ import com.pink.hami.melon.dual.option.BuildConfig
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.bean.DualFFFFFFBean
 import com.pink.hami.melon.dual.option.bean.VpnServiceBean
-import com.pink.hami.melon.dual.option.utils.DualONlineFun.getOnlineSmData
+import com.pink.hami.melon.dual.option.utils.DualONlineFun.landingRemoteData
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
@@ -15,8 +15,8 @@ object DualContext {
     val put_data_url: String
     val put_dualLoad_service_data_url: String
 
-    const val isSmileConnected = "isSmileConnected"
-    const val cuSmileConnected = "cuSmileConnected"
+    const val isDualConnected = "isDualConnected"
+    const val cuDualConnected = "cuDualConnected"
 
     var gidData = ""
     @SuppressLint("StaticFieldLeak")
@@ -53,7 +53,7 @@ object DualContext {
     }
 
     private fun fetchOnlineDataIfNecessary(context: Context) {
-        getOnlineSmData(context)
+        landingRemoteData(context)
     }
 
     fun getAllVpnListData(): MutableList<VpnServiceBean>? {

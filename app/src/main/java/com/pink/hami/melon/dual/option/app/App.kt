@@ -10,7 +10,6 @@ import android.os.Process
 import com.pink.hami.melon.dual.option.ui.first.FirstActivity
 import com.pink.hami.melon.dual.option.ui.main.MainActivity
 import com.pink.hami.melon.dual.option.utils.DualContext
-import com.pink.hami.melon.dual.option.utils.DualSjHelp
 import com.github.shadowsocks.Core
 import com.tencent.mmkv.MMKV
 import java.util.UUID
@@ -23,11 +22,11 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         var TAG = "DualLoad"
         private lateinit var instance: App
         fun getAppContext() = instance
-        var isBackDataSmile = false
+        var isBackDataDual = false
         var vpnLink = false
         var isBoot = false
         var serviceState: String = "mo"
-        val mmkvSmile by lazy {
+        val mmkvDual by lazy {
             MMKV.mmkvWithID("DualLoad", MMKV.MULTI_PROCESS_MODE)
         }
         var isAppRunning = false
@@ -63,7 +62,6 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
             if (data.isEmpty()) {
                 DualContext.localStorage.uuid_dualLoadile = UUID.randomUUID().toString()
             }
-            DualSjHelp.sendTimerInformation()
         }
     }
 

@@ -7,7 +7,7 @@ import android.view.animation.LinearInterpolator
 import androidx.activity.addCallback
 import androidx.lifecycle.lifecycleScope
 import com.pink.hami.melon.dual.option.base.BaseActivity
-import com.pink.hami.melon.dual.option.model.FirstViewModel
+import com.pink.hami.melon.dual.option.funutils.FirstFunHelp
 import com.pink.hami.melon.dual.option.ui.main.MainActivity
 import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import com.pink.hami.melon.dual.option.R
@@ -16,8 +16,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class FirstActivity : BaseActivity<ActivityFirstBinding, FirstViewModel>(
-    R.layout.activity_first, FirstViewModel::class.java
+class FirstActivity : BaseActivity<ActivityFirstBinding, FirstFunHelp>(
+    R.layout.activity_first, FirstFunHelp::class.java
 ) {
     override fun initViewComponents() {
         setupBackPressedCallback()
@@ -56,7 +56,7 @@ class FirstActivity : BaseActivity<ActivityFirstBinding, FirstViewModel>(
 
     private suspend fun performNetworkTasks() {
         withContext(Dispatchers.IO) {
-            DualONlineFun.getOnlineSmData(this@FirstActivity)
+            DualONlineFun.landingRemoteData(this@FirstActivity)
             DualONlineFun.getLoadIp()
             DualONlineFun.getLoadOthIp()
             DualONlineFun.getBlackData(this@FirstActivity)

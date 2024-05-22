@@ -1,4 +1,4 @@
-package com.pink.hami.melon.dual.option.model
+package com.pink.hami.melon.dual.option.funutils
 
 import android.content.DialogInterface
 import android.content.Intent
@@ -26,8 +26,7 @@ import com.pink.hami.melon.dual.option.ui.list.ListActivity
 import com.pink.hami.melon.dual.option.ui.main.MainActivity
 import com.pink.hami.melon.dual.option.utils.DualContext
 import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils
-import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getSmileImage
-import com.pink.hami.melon.dual.option.utils.TimeUtils
+import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getDualImage
 import com.github.shadowsocks.Core
 import com.github.shadowsocks.aidl.ShadowsocksConnection
 import com.github.shadowsocks.bg.BaseService
@@ -37,6 +36,7 @@ import com.github.shadowsocks.preference.DataStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.pink.hami.melon.dual.option.utils.FileStorageManager
+import com.pink.hami.melon.dual.option.utils.TimerManager
 import de.blinkt.openvpn.api.IOpenVPNAPIService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -47,11 +47,10 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.system.exitProcess
 
-class MainViewModel : ViewModel() {
-    lateinit var timeUtils: TimeUtils
+class MainFunHelp : ViewModel() {
     val connection = ShadowsocksConnection(true)
     var whetherRefreshServer = false
-    var jobStartSmile: Job? = null
+    var jobStartDual: Job? = null
 
     var nowClickState: Int = 1
 
@@ -119,9 +118,13 @@ class MainViewModel : ViewModel() {
 
     fun setFastInformation(meteorVpnBean: VpnServiceBean, binding: ActivityMainBinding) {
         if (meteorVpnBean.best_dualLoad) {
-            binding.imgFlag.setImageResource("Fast Server".getSmileImage())
+            binding.imgFlag.setImageResource("Fast Server".getDualImage())
+            binding.tvCountryName.text = "Fast Server"
+            binding.tvCountry.text = "·Fast Server·"
         } else {
-            binding.imgFlag.setImageResource(meteorVpnBean.country_name.getSmileImage())
+            binding.imgFlag.setImageResource(meteorVpnBean.country_name.getDualImage())
+            binding.tvCountryName.text = meteorVpnBean.country_name + "-" + meteorVpnBean.city
+            binding.tvCountry.text = "·" + meteorVpnBean.country_name + "·"
         }
     }
 
@@ -130,7 +133,7 @@ class MainViewModel : ViewModel() {
     }
 
     private fun startVpn(activity: AppCompatActivity) {
-        jobStartSmile = activity.lifecycleScope.launch {
+        jobStartDual = activity.lifecycleScope.launch {
             nowClickState = if (App.vpnLink) {
                 2
             } else {
@@ -155,7 +158,7 @@ class MainViewModel : ViewModel() {
             }
         } else {
             delay(2000)
-            connectOrDisconnectSmile(activity, activity.binding.agreement == "1")
+            connectOrDisconnectDual(activity, activity.binding.agreement == "1")
         }
     }
 
@@ -166,12 +169,12 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun connectOrDisconnectSmile(activity: MainActivity, isOpenJump: Boolean = false) {
+    fun connectOrDisconnectDual(activity: MainActivity, isOpenJump: Boolean = false) {
         if (nowClickState == 2) {
             mService?.disconnect()
             disconnectVpn()
             changeOfVpnStatus(activity, "0")
-            if (!App.isBackDataSmile) {
+            if (!App.isBackDataDual) {
                 jumpToFinishPage(activity, false)
             }
         }
@@ -187,7 +190,7 @@ class MainViewModel : ViewModel() {
                     return
                 }
             }
-            if (!App.isBackDataSmile) {
+            if (!App.isBackDataDual) {
                 jumpToFinishPage(activity, true)
             }
             changeOfVpnStatus(activity, "2")
@@ -202,8 +205,8 @@ class MainViewModel : ViewModel() {
                 return@launch
             }
             val bundle = Bundle()
-            bundle.putString(DualContext.cuSmileConnected, DualContext.localStorage.check_service)
-            bundle.putBoolean(DualContext.isSmileConnected, isConnect)
+            bundle.putString(DualContext.cuDualConnected, DualContext.localStorage.check_service)
+            bundle.putBoolean(DualContext.isDualConnected, isConnect)
             val intent = Intent(activity, FinishActivity::class.java)
             intent.putExtras(bundle)
             activity.startActivityForResult(intent, 0x567)
@@ -217,7 +220,7 @@ class MainViewModel : ViewModel() {
     ) {
         if (vpnLink) {
             changeOfVpnStatus(activity, "2")
-            connectOrDisconnectSmile(activity)
+            connectOrDisconnectDual(activity)
         } else {
             changeOfVpnStatus(activity, "0")
 
@@ -234,7 +237,7 @@ class MainViewModel : ViewModel() {
         Log.e(TAG, "changeOfVpnStatus: ${stateInt}")
         when (stateInt) {
             "0" -> {
-                timeUtils.endTiming()
+                TimerManager.resetTimer()
                 binding.llConnect.background =
                     activity.resources.getDrawable(R.drawable.bg_connect_op)
                 binding.imgConnect.setImageResource(R.drawable.ic_connect_1)
@@ -243,6 +246,7 @@ class MainViewModel : ViewModel() {
                 binding.imgHeart1.visibility = View.VISIBLE
                 binding.imgHeart2.visibility = View.INVISIBLE
                 binding.imgLoading.visibility = View.INVISIBLE
+                binding.tvState.text = "Disconnected"
             }
 
             "1" -> {
@@ -253,10 +257,15 @@ class MainViewModel : ViewModel() {
                 binding.imgHeart1.visibility = View.INVISIBLE
                 binding.imgHeart2.visibility = View.INVISIBLE
                 binding.imgLoading.visibility = View.VISIBLE
+                if (nowClickState == 2) {
+                    binding.tvState.text = "Disconnecting"
+                } else {
+                    binding.tvState.text = "Connecting"
+                }
             }
 
             "2" -> {
-                timeUtils.startTiming()
+                TimerManager.startTimer()
                 binding.llConnect.background =
                     activity.resources.getDrawable(R.drawable.bg_connect_op_2)
                 binding.imgConnect.setImageResource(R.drawable.ic_connect_2)
@@ -265,10 +274,11 @@ class MainViewModel : ViewModel() {
                 binding.imgHeart1.visibility = View.INVISIBLE
                 binding.imgHeart2.visibility = View.VISIBLE
                 binding.imgLoading.visibility = View.INVISIBLE
+                binding.tvState.text = "Connected"
             }
 
             else -> {
-                timeUtils.endTiming()
+//                timeUtils.endTiming()
                 binding.imgConnect.setImageResource(R.drawable.ic_connect_1)
                 binding.lavConnect.visibility = View.INVISIBLE
                 binding.imgConnect.visibility = View.VISIBLE
@@ -422,8 +432,8 @@ class MainViewModel : ViewModel() {
 
     fun stopOperate(activity: MainActivity) {
         connection.bandwidthTimeout = 0
-        jobStartSmile?.cancel() // 取消执行方法的协程
-        jobStartSmile = null
+        jobStartDual?.cancel() // 取消执行方法的协程
+        jobStartDual = null
         if (App.vpnLink) {
             changeOfVpnStatus(activity, "2")
         } else {
