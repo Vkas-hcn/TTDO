@@ -29,13 +29,12 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.PowerManager
 import android.text.format.Formatter
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import com.github.shadowsocks.Core
-import com.github.shadowsocks.MkUtils
+import com.github.shadowsocks.FlieSaveFun
 import com.github.shadowsocks.aidl.IShadowsocksServiceCallback
 import com.github.shadowsocks.aidl.TrafficStats
 import com.github.shadowsocks.core.R
@@ -66,7 +65,7 @@ class ServiceNotification(private val service: BaseService.Interface, profileNam
                             Formatter.formatFileSize(service, stats.txTotal),
                             Formatter.formatFileSize(service, stats.rxTotal)))
                 }
-                MkUtils.getSpeedData(service, stats)
+                FlieSaveFun.getSpeedData(service, stats)
                 show()
             }
             override fun trafficPersisted(profileId: Long) { }

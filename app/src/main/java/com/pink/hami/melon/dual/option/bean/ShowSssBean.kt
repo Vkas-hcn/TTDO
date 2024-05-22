@@ -3,39 +3,39 @@ package com.pink.hami.melon.dual.option.bean
 import com.google.gson.annotations.SerializedName
 
 
-data class OnlineBean(
+data class DualFFFFFFBean(
     val code: Int,
     val `data`: Data,
     val msg: String
 )
 
 data class Data(
-    @SerializedName("lYUV")
+    @SerializedName("CWywWBwl")
     val server_list: MutableList<VpnServiceBean>,
-    @SerializedName("dXNJbL")
+    @SerializedName("CEFWfua")
     val smart_list: MutableList<VpnServiceBean>
 )
 
 data class VpnServiceBean(
-    @SerializedName("HrRKz")
+    @SerializedName("PVTzJURHO")
     var city: String = "",
 
-    @SerializedName("lEiDC")
+    @SerializedName("cmzOH")
     var country_name: String = "",
 
-    @SerializedName("SThwT")
+    @SerializedName("uzDlYUg")
     val ip: String = "",
 
-    @SerializedName("KrJRsKxr")
+    @SerializedName("rsB")
     val mode: String = "",
 
-    @SerializedName("wvAKuJN")
+    @SerializedName("rYlCpPO")
     val port: Int = 0,
 
-    @SerializedName("VVlFAaD")
+    @SerializedName("yQJzw")
     val user_pwd: String = "",
 
-    var best_smart: Boolean = false,
-    var smart_smart: Boolean = false,
-    var check_smart: Boolean = false,
+    var best_dualLoad: Boolean = false,
+    var hideViewShow: Boolean = false,
+    var check_dualLoad: Boolean = false,
 )

@@ -12,10 +12,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.bean.VpnServiceBean
-import com.pink.hami.melon.dual.option.utils.SmileUtils.getSmileImage
+import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getSmileImage
 
 class ListServiceAdapter(private val dataList: MutableList<VpnServiceBean>) :
     RecyclerView.Adapter<ListServiceAdapter.ViewHolder>() {
+
+    private var filteredList = dataList.toMutableList()
+
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvName: TextView = itemView.findViewById(R.id.tv_country)
         var aivFlag: ImageView = itemView.findViewById(R.id.aiv_flag)
@@ -31,45 +34,60 @@ class ListServiceAdapter(private val dataList: MutableList<VpnServiceBean>) :
             }
         }
     }
+
+    private var onItemClickListener: OnItemClickListener? = null
+
     fun setOnItemClickListener(listener: OnItemClickListener) {
         onItemClickListener = listener
     }
+
     private fun onItemClick(position: Int) {
         onItemClickListener?.onItemClick(position)
     }
+
     interface OnItemClickListener {
         fun onItemClick(position: Int)
     }
 
-    private var onItemClickListener: OnItemClickListener? = null
-
-
     @SuppressLint("UseCompatLoadingForDrawables")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = dataList[position]
+        val item = filteredList[position]
 
-        if (item.best_smart) {
-            holder.tvName.text = "Faster Server"
-            holder.aivFlag.setImageResource(R.drawable.ic_fast)
+        // Handle item visibility based on hideViewShow field
+        if (item.hideViewShow) {
+            holder.itemView.visibility = View.GONE
+            holder.itemView.layoutParams = RecyclerView.LayoutParams(0, 0)
         } else {
-            holder.tvName.text = String.format(item.country_name + "," + item.city)
-            holder.aivFlag.setImageResource(item.country_name.getSmileImage())
-        }
+            holder.itemView.visibility = View.VISIBLE
+            holder.itemView.layoutParams = RecyclerView.LayoutParams(
+                RecyclerView.LayoutParams.MATCH_PARENT,
+                RecyclerView.LayoutParams.WRAP_CONTENT
+            )
 
-        if (item.check_smart && App.vpnLink) {
-            holder.llItem.background =
-                holder.itemView.context.getDrawable(R.drawable.bg_item_2_op)
-            holder.imgCheck.setImageResource(R.drawable.ic_check)
-        } else {
-            holder.imgCheck.setImageResource(R.drawable.ic_discheck)
-            holder.llItem.background =
-                holder.itemView.context.getDrawable(R.drawable.bg_item_1_op)
+            if (item.best_dualLoad) {
+                holder.tvName.text = "Faster Server"
+                holder.aivFlag.setImageResource(R.drawable.ic_fast)
+            } else {
+                holder.tvName.text = String.format(item.country_name + "," + item.city)
+                holder.aivFlag.setImageResource(item.country_name.getSmileImage())
+            }
+
+            if (item.check_dualLoad && App.vpnLink) {
+                holder.llItem.background =
+                    holder.itemView.context.getDrawable(R.drawable.bg_item_2_op)
+                holder.imgCheck.setImageResource(R.drawable.ic_check)
+            } else {
+                holder.imgCheck.setImageResource(R.drawable.ic_discheck)
+                holder.llItem.background =
+                    holder.itemView.context.getDrawable(R.drawable.bg_item_1_op)
+            }
         }
     }
 
     override fun getItemCount(): Int {
-        return dataList.size
+        return filteredList.size
     }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val context: Context = parent.context
         val inflater = LayoutInflater.from(context)
@@ -77,6 +95,15 @@ class ListServiceAdapter(private val dataList: MutableList<VpnServiceBean>) :
         return ViewHolder(itemView)
     }
 
-
-
+    fun filter(query: String) {
+        filteredList = if (query.isEmpty()) {
+            dataList.toMutableList()
+        } else {
+            dataList.filter {
+                it.country_name.contains(query, ignoreCase = true) || it.city.contains(query, ignoreCase = true)
+            }.toMutableList()
+        }
+        notifyDataSetChanged()
+    }
 }
+

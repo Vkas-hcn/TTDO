@@ -1,120 +1,98 @@
 package com.pink.hami.melon.dual.option.ui.first
 
-import android.view.KeyEvent
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
+import android.view.animation.LinearInterpolator
+import androidx.activity.addCallback
 import androidx.lifecycle.lifecycleScope
 import com.pink.hami.melon.dual.option.base.BaseActivity
 import com.pink.hami.melon.dual.option.model.FirstViewModel
 import com.pink.hami.melon.dual.option.ui.main.MainActivity
-import com.pink.hami.melon.dual.option.utils.SmileKey
-import com.pink.hami.melon.dual.option.utils.SmileNetHelp
+import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import com.pink.hami.melon.dual.option.R
-import com.pink.hami.melon.dual.option.app.adload.DualLoad
 import com.pink.hami.melon.dual.option.databinding.ActivityFirstBinding
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withContext
 
 class FirstActivity : BaseActivity<ActivityFirstBinding, FirstViewModel>(
     R.layout.activity_first, FirstViewModel::class.java
 ) {
-    override fun intiView() {
-
+    override fun initViewComponents() {
+        setupBackPressedCallback()
     }
 
-    private var jobOpenSmile: Job? = null
-    var count = 0
+    private fun setupBackPressedCallback() {
+        onBackPressedDispatcher.addCallback(this) {
+            // Custom back button behavior can be added here if needed
+        }
+    }
 
-    override fun initData() {
-        showOpenFun()
-        countDown()
+    override fun initializeData() {
+        startNetworkTasks()
+        observeViewModel()
+        startCountdown()
+    }
 
-        viewModel.toMainLive.observe(this) {
-            if (it == "main") {
-                startActivityFirst<MainActivity>()
-                finish()
+    private fun observeViewModel() {
+        viewModel.toMainLive.observe(this) { navigateTo ->
+            if (navigateTo == "main") {
+                navigateToMainActivity()
             }
         }
+    }
+
+    private fun navigateToMainActivity() {
+        launchActivity<MainActivity>()
+        finish()
+    }
+
+    private fun startNetworkTasks() {
         lifecycleScope.launch {
-            SmileNetHelp.getOnlineSmData(this@FirstActivity)
-            SmileNetHelp.getLoadIp()
-            SmileNetHelp.getLoadOthIp()
-            SmileNetHelp.getBlackData(this@FirstActivity)
-            SmileNetHelp.getOnlyIp()
+            performNetworkTasks()
         }
-        viewModel.getFileBaseData(this) {
-            DualLoad.isLoadOpenFist = false
-            DualLoad.init(this)
-            loadOpenAd()
-        }
-
     }
 
-    private fun countDown() {
-        lifecycleScope.launch {
-            while (true) {
-                count += 1
-                binding.progressBarStart.progress = count
-                if (count >= 100) {
-                    cancel()
-                    break
-                }
-                delay(120)
+    private suspend fun performNetworkTasks() {
+        withContext(Dispatchers.IO) {
+            DualONlineFun.getOnlineSmData(this@FirstActivity)
+            DualONlineFun.getLoadIp()
+            DualONlineFun.getLoadOthIp()
+            DualONlineFun.getBlackData(this@FirstActivity)
+            DualONlineFun.getOnlyIp()
+        }
+    }
+
+    private fun startCountdown() {
+        val animator = createCountdownAnimator()
+        setupAnimatorListeners(animator)
+        animator.start()
+    }
+
+    private fun createCountdownAnimator(): ValueAnimator {
+        val animator = ValueAnimator.ofInt(0, 100)
+        animator.duration = 2000 // 2秒钟
+        animator.interpolator = LinearInterpolator()
+        animator.addUpdateListener { animation ->
+            updateProgressBar(animation.animatedValue as Int)
+        }
+        return animator
+    }
+
+    private fun setupAnimatorListeners(animator: ValueAnimator) {
+        animator.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                onCountdownFinished()
             }
-        }
+        })
     }
 
-    private fun loadOpenAd() {
-        jobOpenSmile?.cancel()
-        jobOpenSmile = null
-        jobOpenSmile = lifecycleScope.launch {
-            try {
-                withTimeout(12000L) {
-                    while (isActive) {
-                        DualLoad.resultOf(SmileKey.POS_OPEN)?.let { res ->
-                            viewModel.showOpen.value = res
-                            cancel()
-                            jobOpenSmile = null
-                            count = 100
-                            binding.progressBarStart.progress = count
-                        }
-                        delay(500L)
-                    }
-                }
-            } catch (e: TimeoutCancellationException) {
-                cancel()
-                jobOpenSmile = null
-                count = 100
-                binding.progressBarStart.progress = count
-                viewModel.toMainLive.postValue("main")
-            }
-        }
+    private fun updateProgressBar(progress: Int) {
+        binding.progressBarStart.progress = progress
     }
 
-    private fun showOpenFun() {
-        viewModel.showOpen.observe(this) {
-            DualLoad.showFullScreenOf(
-                where = SmileKey.POS_OPEN,
-                context = this,
-                res = it,
-                onShowCompleted = {
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        viewModel.toMainLive.postValue("main")
-
-                    }
-                }
-            )
-        }
-    }
-
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            return true;
-        }
-        return true
+    private fun onCountdownFinished() {
+        viewModel.toMainLive.postValue("main")
     }
 }

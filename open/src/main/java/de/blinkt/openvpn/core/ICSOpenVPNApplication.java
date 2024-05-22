@@ -30,7 +30,7 @@ import de.blinkt.openvpn.api.AppRestrictions;
 
 public class ICSOpenVPNApplication extends Application {
     private StatusListener mStatus;
-
+    public static Context context;
     @Override
     public void onCreate() {
         if (BuildConfig.BUILD_TYPE.equals("debug"))
@@ -42,7 +42,7 @@ public class ICSOpenVPNApplication extends Application {
         LocaleHelper.setDesiredLocale(this);
         super.onCreate();
         MMKV.initialize(this);
-
+        context = this;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             createNotificationChannels();
         mStatus = new StatusListener();

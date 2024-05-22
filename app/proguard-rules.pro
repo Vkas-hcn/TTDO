@@ -48,5 +48,5 @@
 -keep class com.pink.hami.melon.dual.option.bean.SmileFlowBean { *; }
 -keep class com.pink.hami.melon.dual.option.bean.SmileRefBean { *; }
 -keep class com.pink.hami.melon.dual.option.bean.VpnServiceBean { *; }
--keep class com.pink.hami.melon.dual.option.bean.OnlineBean { *; }
+-keep class com.pink.hami.melon.dual.option.bean.DualFFFFFFBean { *; }
 -keep class com.pink.hami.melon.dual.option.bean.Data { *; }

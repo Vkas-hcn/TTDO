@@ -5,18 +5,16 @@ import android.app.AlertDialog
 import android.content.DialogInterface
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.bean.VpnServiceBean
 import com.pink.hami.melon.dual.option.ui.list.ListActivity
 import com.pink.hami.melon.dual.option.ui.list.ListServiceAdapter
-import com.pink.hami.melon.dual.option.utils.SmileKey
+import com.pink.hami.melon.dual.option.utils.DualContext
 import com.google.gson.Gson
-import com.pink.hami.melon.dual.option.app.adload.DualLoad
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.pink.hami.melon.dual.option.R
+import com.pink.hami.melon.dual.option.ui.list.VerticalSpaceItemDecoration
 
-class ListViewModel:ViewModel() {
+class ListViewModel : ViewModel() {
     lateinit var skVpnServiceBean: VpnServiceBean
     lateinit var allVpnListData: MutableList<VpnServiceBean>
     lateinit var listServiceAdapter: ListServiceAdapter
@@ -37,30 +35,37 @@ class ListViewModel:ViewModel() {
 
     private fun isSameServerSelected(position: Int): Boolean {
         return ecVpnServiceBeanList[position].ip == checkSkVpnServiceBeanClick.ip &&
-                ecVpnServiceBeanList[position].best_smart == checkSkVpnServiceBeanClick.best_smart
+                ecVpnServiceBeanList[position].best_dualLoad == checkSkVpnServiceBeanClick.best_dualLoad
     }
 
     private fun handleSameServerSelected(activity: AppCompatActivity) {
         if (!App.vpnLink) {
             App.serviceState = "disconnect"
             activity.finish()
-            SmileKey.check_service = Gson().toJson(checkSkVpnServiceBean)
+            DualContext.localStorage.check_service = Gson().toJson(checkSkVpnServiceBean)
         }
     }
 
     private fun updateServerSelection(position: Int) {
         ecVpnServiceBeanList.forEachIndexed { index, _ ->
-            ecVpnServiceBeanList[index].check_smart = position == index
-            if (ecVpnServiceBeanList[index].check_smart) {
+            ecVpnServiceBeanList[index].check_dualLoad = position == index
+            if (ecVpnServiceBeanList[index].check_dualLoad) {
                 checkSkVpnServiceBean = ecVpnServiceBeanList[index]
             }
         }
     }
 
-    fun initAllAdapter(activity: ListActivity, onClick:(activity: ListActivity, position:Int)->Unit) {
+    fun initAllAdapter(
+        activity: ListActivity,
+        onClick: (activity: ListActivity, position: Int) -> Unit
+    ) {
         getAllServer()
-       activity.binding.rvList.adapter = listServiceAdapter
-       activity.binding.rvList.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(activity)
+        activity.binding.rvList.adapter = listServiceAdapter
+        val verticalSpaceHeight = activity.resources.getDimensionPixelSize(R.dimen.recycler_view_item_spacing)
+        activity.binding.rvList.layoutManager =
+            androidx.recyclerview.widget.LinearLayoutManager(activity)
+        activity.binding.rvList.addItemDecoration(VerticalSpaceItemDecoration(verticalSpaceHeight))
+
         listServiceAdapter.setOnItemClickListener(object : ListServiceAdapter.OnItemClickListener {
             override fun onItemClick(position: Int) {
                 onClick(activity, position)
@@ -75,19 +80,17 @@ class ListViewModel:ViewModel() {
     }
 
     private fun initializeData() {
-        allVpnListData = SmileKey.getAllVpnListData()!!
+        allVpnListData = DualContext.getAllVpnListData()!!
         ecVpnServiceBeanList = allVpnListData
     }
 
     private fun updateSelection() {
         ecVpnServiceBeanList.forEachIndexed { index, vpnServiceBean ->
-            vpnServiceBean.check_smart = if (checkSkVpnServiceBeanClick.best_smart) {
-                ecVpnServiceBeanList[0].check_smart = true
-
+            vpnServiceBean.check_dualLoad = if (checkSkVpnServiceBeanClick.best_dualLoad) {
+                ecVpnServiceBeanList[0].check_dualLoad = true
                 index == 0
             } else {
-                ecVpnServiceBeanList[0].check_smart = false
-
+                ecVpnServiceBeanList[0].check_dualLoad = false
                 vpnServiceBean.ip == checkSkVpnServiceBeanClick.ip
             }
         }
@@ -98,29 +101,9 @@ class ListViewModel:ViewModel() {
     }
 
 
-
-
     fun returnToHomePage(activity: ListActivity) {
-        val res = DualLoad.resultOf(SmileKey.POS_BACK)
-        if (res == null) {
-            activity.finish()
-        } else {
-            showBackFun(res,activity)
-        }
+        activity.finish()
     }
-     private fun showBackFun(it: Any, activity: ListActivity) {
-        DualLoad.showFullScreenOf(
-            where = SmileKey.POS_BACK,
-            context = activity,
-            res = it,
-            onShowCompleted = {
-                activity.lifecycleScope.launch(Dispatchers.Main) {
-                    activity.finish()
-                }
-            }
-        )
-    }
-
 
     private fun showDisconnectDialog(activity: AppCompatActivity) {
         if (handleVpnDisconnectedState(activity)) {
@@ -139,7 +122,7 @@ class ListViewModel:ViewModel() {
         if (!App.vpnLink) {
             activity.finish()
             App.serviceState = "disconnect"
-            SmileKey.check_service = Gson().toJson(checkSkVpnServiceBean)
+            DualContext.localStorage.check_service = Gson().toJson(checkSkVpnServiceBean)
             return true
         }
         return false
@@ -166,13 +149,13 @@ class ListViewModel:ViewModel() {
         dialog.dismiss()
         activity.finish()
         App.serviceState = "connect"
-        SmileKey.check_service = Gson().toJson(checkSkVpnServiceBean)
+        DualContext.localStorage.check_service = Gson().toJson(checkSkVpnServiceBean)
     }
 
     private fun updateEcVpnServiceBeanListSelection() {
         ecVpnServiceBeanList.forEachIndexed { index, _ ->
-            ecVpnServiceBeanList[index].check_smart =
-                (ecVpnServiceBeanList[index].ip == checkSkVpnServiceBeanClick.ip && ecVpnServiceBeanList[index].best_smart == checkSkVpnServiceBeanClick.best_smart)
+            ecVpnServiceBeanList[index].check_dualLoad =
+                (ecVpnServiceBeanList[index].ip == checkSkVpnServiceBeanClick.ip && ecVpnServiceBeanList[index].best_dualLoad == checkSkVpnServiceBeanClick.best_dualLoad)
         }
     }
 

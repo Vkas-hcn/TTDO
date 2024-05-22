@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -17,10 +18,10 @@ import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.app.App.Companion.TAG
 import com.pink.hami.melon.dual.option.base.BaseActivity
 import com.pink.hami.melon.dual.option.model.MainViewModel
-import com.pink.hami.melon.dual.option.ui.agreement.AgreementActivity
-import com.pink.hami.melon.dual.option.utils.SmileKey
-import com.pink.hami.melon.dual.option.utils.SmileUtils
-import com.pink.hami.melon.dual.option.utils.TimeData
+import com.pink.hami.melon.dual.option.ui.wwwwgidasd.aaagggg.AgreementActivity
+import com.pink.hami.melon.dual.option.utils.DualContext
+import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils
+import com.pink.hami.melon.dual.option.utils.DualSjHelp
 import com.pink.hami.melon.dual.option.utils.TimeUtils
 import com.github.shadowsocks.aidl.IShadowsocksService
 import com.github.shadowsocks.aidl.ShadowsocksConnection
@@ -36,10 +37,8 @@ import de.blinkt.openvpn.api.IOpenVPNStatusCallback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import com.pink.hami.melon.dual.option.utils.SmileNetHelp
-import com.pink.hami.melon.dual.option.utils.UserConter
+import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import com.pink.hami.melon.dual.option.R
-import com.pink.hami.melon.dual.option.app.adload.DualLoad
 import com.pink.hami.melon.dual.option.databinding.ActivityMainBinding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -52,22 +51,31 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
     OnPreferenceDataStoreChangeListener, TimeUtils.TimeUtilsListener {
     var showHomeJob: Job? = null
 
-    override fun intiView() {
+    override fun initViewComponents() {
         clickListener()
         initVpnSetting()
         setServiceData()
-
+        onBackPressedDispatcher.addCallback(this) {
+            if (binding.showGuide == true || binding.dlMain.isOpen) {
+                binding.showGuide = false
+                binding.dlMain.close()
+            } else {
+                viewModel.clickChange(this@MainActivity, nextFun = {
+                    finish()
+                })
+            }
+        }
     }
 
-    override fun initData() {
+    override fun initializeData() {
         if (viewModel.isCanUser(this) != 0) {
             viewModel.initData(this, this)
         }
     }
 
-    private fun clickListener() {
 
-        binding.agreement = SmileKey.connection_mode.ifEmpty { "0" }
+    private fun clickListener() {
+        binding.agreement = DualContext.localStorage.connection_mode.ifEmpty { "0" }
         if (App.isAppRunning) {
             binding.showGuide = false
             App.isAppRunning = false
@@ -103,7 +111,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
         }
 
         binding.tvPp.setOnClickListener {
-            startActivityFirst<AgreementActivity>()
+            launchActivity<AgreementActivity>()
         }
 
         binding.tvAuto.setOnClickListener {
@@ -153,11 +161,6 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
                 viewModel.whetherRefreshServer = false
                 viewModel.setFastInformation(it, binding)
                 toConnectVpn()
-            }
-        }
-        viewModel.showConnectLive.observe(this) {
-            it?.let {
-                viewModel.showConnectFun(this, it)
             }
         }
     }
@@ -225,8 +228,8 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
     private fun toClickConnect() {
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
-                SmileNetHelp.getLoadIp()
-                SmileNetHelp.getLoadOthIp()
+                DualONlineFun.getLoadIp()
+                DualONlineFun.getLoadOthIp()
             }
             if (binding.serviceState == "1") {
                 return@launch
@@ -238,19 +241,16 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
     private fun toConnectVpn() {
         lifecycleScope.launch {
             binding.showGuide = false
-            if (!SmileKey.isHaveServeData(this@MainActivity)) {
+            if (!DualContext.isHaveServeData(this@MainActivity)) {
                 binding.pbLoading.visibility = View.VISIBLE
                 delay(2000)
                 binding.pbLoading.visibility = View.GONE
                 viewModel.initServerData()
                 return@launch
             }
-            if (SmileUtils.isAppOnline(this@MainActivity)) {
-                DualLoad.loadOf(SmileKey.POS_CONNECT)
-                DualLoad.loadOf(SmileKey.POS_BACK)
-                DualLoad.loadOf(SmileKey.POS_RESULT)
+            if (DulaShowDataUtils.isAppOnline(this@MainActivity)) {
                 if (!App.vpnLink) {
-                    SmileKey.connection_mode = binding?.agreement!!
+                    DualContext.localStorage.connection_mode = binding?.agreement!!
                 }
                 if (viewModel.isCanUser(this@MainActivity) == 0) {
                     return@launch
@@ -272,13 +272,6 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
 
 
     private fun initVpnSetting() {
-        if (UserConter.showAdCenter()) {
-            binding.flAd.visibility = View.VISIBLE
-        } else {
-            binding.flAd.visibility = View.GONE
-        }
-        val data = UserConter.spoilerOrNot()
-        SmileKey.smile_arrow = data
         bindService(
             Intent(this, ExternalOpenVPNService::class.java),
             mConnection,
@@ -333,9 +326,9 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
             // RECONNECTING 尝试重新链接 // EXITING 连接中主动掉用断开
             Log.e(
                 TAG,
-                "newStatus: state=$state;message=$message;agreement=${SmileKey.connection_mode}"
+                "newStatus: state=$state;message=$message;agreement=${DualContext.localStorage.connection_mode}"
             )
-            if (SmileKey.connection_mode != "1") {
+            if (DualContext.localStorage.connection_mode != "1") {
                 return
             }
             when (state) {
@@ -387,7 +380,6 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
     }
 
     private fun handleWarmBoot() {
-        viewModel.showHomeAd(this)
     }
 
     private fun handleSmileTimerLock() {
@@ -395,7 +387,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
             binding.showGuide = false
             viewModel.changeOfVpnStatus(this, "2")
             if (binding.tvTime.text.toString() == "00:00:00") {
-                TimeData.startTiming()
+                DualSjHelp.startTiming()
             }
         } else {
             viewModel.changeOfVpnStatus(this, "0")
@@ -427,7 +419,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
         if (requestCode == 0x567 && viewModel.whetherRefreshServer) {
             viewModel.setFastInformation(viewModel.afterDisconnectionServerData, binding)
             val serviceData = Gson().toJson(viewModel.afterDisconnectionServerData)
-            SmileKey.check_service = serviceData
+            DualContext.localStorage.check_service = serviceData
             viewModel.currentServerData = viewModel.afterDisconnectionServerData
         }
         if (requestCode == 567) {
@@ -443,6 +435,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
             App.serviceState = "mo"
         }
     }
+
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
@@ -469,14 +462,14 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
     }
 
     private fun setSsVpnState(canStop: Boolean) {
-        if (SmileKey.connection_mode != "1") {
+        if (DualContext.localStorage.connection_mode != "1") {
             App.vpnLink = canStop
             handleSmileTimerLock()
         }
     }
 
     private fun setOpenVpnState() {
-        if (SmileKey.connection_mode == "1") {
+        if (DualContext.localStorage.connection_mode == "1") {
             handleSmileTimerLock()
         }
     }
@@ -492,7 +485,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainViewModel>(
 
     override fun onTimeChanged() {
         lifecycleScope.launch {
-            binding.tvTime.text = TimeData.getTiming()
+            binding.tvTime.text = DualSjHelp.getTiming()
         }
     }
 }

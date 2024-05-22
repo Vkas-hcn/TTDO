@@ -59,7 +59,7 @@ import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 
 import de.blinkt.openvpn.LaunchVPN;
-import de.blinkt.openvpn.MkUtils;
+import de.blinkt.openvpn.OPenSpUtils;
 import de.blinkt.openvpn.R;
 import de.blinkt.openvpn.VpnProfile;
 import de.blinkt.openvpn.api.ExternalAppDatabase;
@@ -1073,7 +1073,7 @@ public class OpenVPNService extends VpnService implements StateListener, Callbac
                 VpnStatus.logDebug("Orbot not installed?");
             }
         }
-        MkUtils.INSTANCE.brand(builder, getPackageName());
+//        MkUtils.INSTANCE.brand(builder, getPackageName());
 
 
         if (mProfile.mAllowedAppsVpnAreDisallowed) {
@@ -1283,7 +1283,7 @@ public class OpenVPNService extends VpnService implements StateListener, Callbac
             String upData  = humanReadableByteCount(diffOut / OpenVPNManagement.mBytecountInterval, true, getResources());
             String dowData = humanReadableByteCount(diffIn / OpenVPNManagement.mBytecountInterval, true, getResources());
             String statisticsData = humanReadableByteCount(in, false, getResources());
-            MkUtils.INSTANCE.getSpeedData(upData,dowData,statisticsData);
+            OPenSpUtils.INSTANCE.getSpeedData(upData,dowData,statisticsData);
             showNotification(netstat, null, NOTIFICATION_CHANNEL_BG_ID, mConnecttime, LEVEL_CONNECTED, null);
         }
 

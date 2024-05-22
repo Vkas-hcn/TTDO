@@ -17,36 +17,57 @@ abstract class BaseActivity<B : ViewDataBinding, VM : ViewModel>(
         private set
 
     protected val viewModel: VM by lazy {
-        ViewModelProvider(this).get(viewModelClass)
+        initializeViewModel()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setupBinding()
+        setupLifecycleOwner()
+        initViewComponents()
+        initializeData()
+    }
+
+    private fun initializeViewModel(): VM {
+        return ViewModelProvider(this).get(viewModelClass)
+    }
+
+    private fun setupBinding() {
         binding = DataBindingUtil.setContentView(this, layoutId)
+    }
+
+    private fun setupLifecycleOwner() {
         binding.lifecycleOwner = this
-        intiView()
-        initData()
     }
 
-    abstract fun intiView()
-    abstract fun initData()
+    abstract fun initViewComponents()
+    abstract fun initializeData()
 
-    inline fun <reified T : AppCompatActivity> startActivityFirst() {
-        val intent = Intent(this, T::class.java)
+    inline fun <reified T : AppCompatActivity> launchActivity() {
+        val intent = createIntent<T>()
         startActivity(intent)
     }
 
-     inline fun <reified T : AppCompatActivity> startActivityWithParamsFirst(params: Bundle) {
-        val intent = Intent(this, T::class.java)
+    inline fun <reified T : AppCompatActivity> launchActivityWithExtras(params: Bundle) {
+        val intent = createIntent<T>()
+        addExtrasToIntent(intent, params)
+        startActivity(intent)
+    }
+
+    inline fun <reified T : AppCompatActivity> launchActivityForResult(params: Bundle? = null, requestCode: Int) {
+        val intent = createIntent<T>()
+        params?.let {
+            addExtrasToIntent(intent, it)
+        }
+        startActivityForResult(intent, requestCode)
+    }
+
+    // Changed visibility from private to internal to avoid visibility issues
+     inline fun <reified T : AppCompatActivity> createIntent(): Intent {
+        return Intent(this, T::class.java)
+    }
+
+    fun addExtrasToIntent(intent: Intent, params: Bundle) {
         intent.putExtras(params)
-        startActivity(intent)
-    }
-
-     inline fun <reified T : AppCompatActivity> startActivityWithReFirst(params: Bundle?=null,code:Int) {
-        val intent = Intent(this, T::class.java)
-         if (params != null) {
-             intent.putExtras(params)
-         }
-        startActivityForResult(intent,code)
     }
 }

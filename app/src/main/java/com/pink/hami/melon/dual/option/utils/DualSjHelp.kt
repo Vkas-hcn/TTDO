@@ -6,7 +6,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 
-object TimeData {
+object DualSjHelp {
     var skTime = 0
     var isStopThread = true
 

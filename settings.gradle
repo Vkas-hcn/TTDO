@@ -17,4 +17,3 @@ rootProject.name = "TTDO"
 include ':app'
 include ':open'
 include ':core'
-

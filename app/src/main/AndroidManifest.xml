@@ -37,7 +37,7 @@
             android:launchMode="singleTask"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".ui.agreement.AgreementActivity"
+            android:name=".ui.wwwwgidasd.aaagggg.AgreementActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="portrait" />

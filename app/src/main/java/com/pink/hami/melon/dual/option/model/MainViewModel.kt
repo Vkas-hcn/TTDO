@@ -15,6 +15,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
+import com.github.shadowsocks.AppData
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.app.App.Companion.TAG
@@ -23,10 +24,9 @@ import com.pink.hami.melon.dual.option.databinding.ActivityMainBinding
 import com.pink.hami.melon.dual.option.ui.finish.FinishActivity
 import com.pink.hami.melon.dual.option.ui.list.ListActivity
 import com.pink.hami.melon.dual.option.ui.main.MainActivity
-import com.pink.hami.melon.dual.option.utils.SmileKey
-import com.pink.hami.melon.dual.option.utils.SmileUtils
-import com.pink.hami.melon.dual.option.utils.SmileUtils.getSmileImage
-import com.pink.hami.melon.dual.option.utils.SmileUtils.isVisible
+import com.pink.hami.melon.dual.option.utils.DualContext
+import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils
+import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getSmileImage
 import com.pink.hami.melon.dual.option.utils.TimeUtils
 import com.github.shadowsocks.Core
 import com.github.shadowsocks.aidl.ShadowsocksConnection
@@ -36,22 +36,18 @@ import com.github.shadowsocks.database.ProfileManager
 import com.github.shadowsocks.preference.DataStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.pink.hami.melon.dual.option.app.adload.DualLoad
+import com.pink.hami.melon.dual.option.utils.FileStorageManager
 import de.blinkt.openvpn.api.IOpenVPNAPIService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
 import java.util.Locale
 import kotlin.system.exitProcess
 
 class MainViewModel : ViewModel() {
-    val showConnectLive = MutableLiveData<Any>()
     lateinit var timeUtils: TimeUtils
     val connection = ShadowsocksConnection(true)
     var whetherRefreshServer = false
@@ -75,22 +71,24 @@ class MainViewModel : ViewModel() {
         changeState(BaseService.State.Idle, activity)
         connection.connect(activity, call)
         DataStore.publicStore.registerChangeListener(activity)
-        if (SmileKey.check_service.isEmpty()) {
+        if (DualContext.localStorage.check_service.isEmpty()) {
             initServerData()
         } else {
-            val serviceData = SmileKey.check_service
+            val serviceData = DualContext.localStorage.check_service
             val currentServerData: VpnServiceBean =
                 Gson().fromJson(serviceData, object : TypeToken<VpnServiceBean?>() {}.type)
             setFastInformation(currentServerData, binding)
         }
-       getSpeedData(activity)
-
+        getSpeedData(activity)
     }
+
     private fun getSpeedData(activity: MainActivity) {
+        val fff = FileStorageManager(activity)
         activity.lifecycleScope.launch {
             while (isActive) {
-                activity.binding.tvDow.text = App.mmkvSmile.decodeString("speed_dow", "0 B")
-                activity.binding.tvUp.text = App.mmkvSmile.decodeString("speed_up", "0 B")
+                val bean = Gson().fromJson(fff.loadData(), AppData::class.java)
+                activity.binding.tvDow.text = bean.dual_sp_dow
+                activity.binding.tvUp.text = bean.dual_sp_up
                 delay(500)
             }
         }
@@ -98,10 +96,10 @@ class MainViewModel : ViewModel() {
 
     fun changeState(
         state: BaseService.State = BaseService.State.Idle,
-        activity: AppCompatActivity,
+        activity: MainActivity,
         vpnLink: Boolean = false,
     ) {
-        connectionStatusJudgment(vpnLink, activity)
+        connectionStatusJudgment(state.canStop, activity)
         stateListener?.invoke(state)
     }
 
@@ -111,17 +109,16 @@ class MainViewModel : ViewModel() {
                 return@launch
             }
             activity.binding.pbLoading.visibility = View.VISIBLE
-            if (!SmileKey.isHaveServeData(activity)) {
+            if (!DualContext.isHaveServeData(activity)) {
                 delay(2000)
             }
             activity.binding.pbLoading.visibility = View.INVISIBLE
-            DualLoad.loadOf(SmileKey.POS_BACK)
-            activity.startActivityWithReFirst<ListActivity>(null, 567)
+            activity.launchActivityForResult<ListActivity>(null, 567)
         }
     }
 
     fun setFastInformation(meteorVpnBean: VpnServiceBean, binding: ActivityMainBinding) {
-        if (meteorVpnBean.best_smart) {
+        if (meteorVpnBean.best_dualLoad) {
             binding.imgFlag.setImageResource("Fast Server".getSmileImage())
         } else {
             binding.imgFlag.setImageResource(meteorVpnBean.country_name.getSmileImage())
@@ -141,7 +138,6 @@ class MainViewModel : ViewModel() {
             }
             changeOfVpnStatus(activity as MainActivity, "1")
             connectVpn(activity)
-            loadSmileAdvertisements(activity)
         }
     }
 
@@ -157,6 +153,9 @@ class MainViewModel : ViewModel() {
                 mService?.disconnect()
                 Core.startService()
             }
+        } else {
+            delay(2000)
+            connectOrDisconnectSmile(activity, activity.binding.agreement == "1")
         }
     }
 
@@ -167,51 +166,8 @@ class MainViewModel : ViewModel() {
         }
     }
 
-
-    private suspend fun loadSmileAdvertisements(activity: AppCompatActivity) {
-        val contData = try {
-            (SmileKey.getFlowJson().cont.toLong())*1000
-        }catch (e:Exception){
-            10000L
-        }
-        try {
-            withTimeout(contData) {
-                delay(2000L)
-                while (isActive) {
-                    if (DualLoad.resultOf(SmileKey.POS_CONNECT) != null) {
-                        showConnectLive.value = DualLoad.resultOf(SmileKey.POS_CONNECT)
-                        cancel()
-                        jobStartSmile?.cancel()
-                        jobStartSmile = null
-                    }
-                    delay(500L)
-                }
-            }
-        } catch (e: TimeoutCancellationException) {
-            connectOrDisconnectSmile(activity as MainActivity)
-        }
-    }
-
-    fun showConnectFun(activity: MainActivity, it: Any) {
-        DualLoad.showFullScreenOf(
-            where = SmileKey.POS_CONNECT,
-            context = activity,
-            res = it,
-            preload = true,
-            onShowCompleted = {
-                jobStartSmile?.cancel()
-                jobStartSmile = null
-                connectOrDisconnectSmile(activity, true)
-            }
-        )
-    }
-
     fun connectOrDisconnectSmile(activity: MainActivity, isOpenJump: Boolean = false) {
         if (nowClickState == 2) {
-            if(App.vpnLink){
-                Toast.makeText(activity, "VPN is connecting. Please try again later.", Toast.LENGTH_SHORT).show()
-                return
-            }
             mService?.disconnect()
             disconnectVpn()
             changeOfVpnStatus(activity, "0")
@@ -220,8 +176,10 @@ class MainViewModel : ViewModel() {
             }
         }
         if (nowClickState == 0) {
-            if(!App.vpnLink){
-                Toast.makeText(activity, "The connection failed", Toast.LENGTH_SHORT).show()
+            if (!App.vpnLink) {
+                activity.lifecycleScope.launch(Dispatchers.Main) {
+                    Toast.makeText(activity, "The connection failed", Toast.LENGTH_SHORT).show()
+                }
                 return
             }
             if (!isOpenJump) {
@@ -244,8 +202,8 @@ class MainViewModel : ViewModel() {
                 return@launch
             }
             val bundle = Bundle()
-            bundle.putString(SmileKey.cuSmileConnected, SmileKey.check_service)
-            bundle.putBoolean(SmileKey.isSmileConnected, isConnect)
+            bundle.putString(DualContext.cuSmileConnected, DualContext.localStorage.check_service)
+            bundle.putBoolean(DualContext.isSmileConnected, isConnect)
             val intent = Intent(activity, FinishActivity::class.java)
             intent.putExtras(bundle)
             activity.startActivityForResult(intent, 0x567)
@@ -253,42 +211,20 @@ class MainViewModel : ViewModel() {
 
     }
 
-    fun connectionStatusJudgment(
+    private fun connectionStatusJudgment(
         vpnLink: Boolean,
-        activity: AppCompatActivity
+        activity: MainActivity
     ) {
-        val binding = (activity as MainActivity).binding
-        when (vpnLink) {
-            true -> {
-                // 连接成功
-                connectionServerSuccessful(binding)
-            }
+        if (vpnLink) {
+            changeOfVpnStatus(activity, "2")
+            connectOrDisconnectSmile(activity)
+        } else {
+            changeOfVpnStatus(activity, "0")
 
-            false -> {
-                disconnectServerSuccessful(binding)
-            }
         }
-    }
-
-    /**
-     * 连接服务器成功
-     */
-    fun connectionServerSuccessful(binding: ActivityMainBinding) {
-        binding.serviceState = "2"
-    }
-
-    /**
-     * 断开服务器
-     */
-    fun disconnectServerSuccessful(binding: ActivityMainBinding) {
-
 
     }
 
-    /**
-     * vpn状态变化
-     * 是否连接
-     */
     fun changeOfVpnStatus(
         activity: MainActivity,
         stateInt: String
@@ -299,7 +235,8 @@ class MainViewModel : ViewModel() {
         when (stateInt) {
             "0" -> {
                 timeUtils.endTiming()
-                binding.llConnect.background = activity.resources.getDrawable(R.drawable.bg_connect_op)
+                binding.llConnect.background =
+                    activity.resources.getDrawable(R.drawable.bg_connect_op)
                 binding.imgConnect.setImageResource(R.drawable.ic_connect_1)
                 binding.lavConnect.visibility = View.INVISIBLE
                 binding.imgConnect.visibility = View.VISIBLE
@@ -309,7 +246,8 @@ class MainViewModel : ViewModel() {
             }
 
             "1" -> {
-                binding.llConnect.background = activity.resources.getDrawable(R.drawable.bg_connect_op_2)
+                binding.llConnect.background =
+                    activity.resources.getDrawable(R.drawable.bg_connect_op_2)
                 binding.lavConnect.visibility = View.VISIBLE
                 binding.imgConnect.visibility = View.INVISIBLE
                 binding.imgHeart1.visibility = View.INVISIBLE
@@ -319,7 +257,8 @@ class MainViewModel : ViewModel() {
 
             "2" -> {
                 timeUtils.startTiming()
-                binding.llConnect.background = activity.resources.getDrawable(R.drawable.bg_connect_op_2)
+                binding.llConnect.background =
+                    activity.resources.getDrawable(R.drawable.bg_connect_op_2)
                 binding.imgConnect.setImageResource(R.drawable.ic_connect_2)
                 binding.lavConnect.visibility = View.INVISIBLE
                 binding.imgConnect.visibility = View.VISIBLE
@@ -340,37 +279,6 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun showHomeAd(activity: MainActivity) {
-        activity.showHomeJob?.cancel()
-        activity.showHomeJob ==null
-        activity.showHomeJob= activity.lifecycleScope.launch {
-            delay(300)
-            DualLoad.loadOf(SmileKey.POS_HOME)
-            if (activity.isVisible() && !App.isBoot) {
-                activity.binding.nativeAdView.visibility = View.INVISIBLE
-                activity.binding.imgAdType.visibility = View.VISIBLE
-                App.isBoot = true
-                while (isActive) {
-                    val adHomeData = DualLoad.resultOf(SmileKey.POS_HOME)
-                    if (adHomeData != null) {
-                        Log.e(TAG, "showHomeAd: ", )
-                        activity.binding.nativeAdView.visibility = View.VISIBLE
-                        DualLoad.showNativeOf(
-                            where = SmileKey.POS_HOME,
-                            nativeRoot = activity.binding.nativeAdView,
-                            res = adHomeData,
-                            preload = true,
-                            onShowCompleted = {
-                            }
-                        )
-                        activity.showHomeJob?.cancel()
-                        activity.showHomeJob = null
-                    }
-                    delay(500)
-                }
-            }
-        }
-    }
 
     val liveInitializeServerData: MutableLiveData<VpnServiceBean> by lazy {
         MutableLiveData<VpnServiceBean>()
@@ -389,31 +297,31 @@ class MainViewModel : ViewModel() {
     var afterDisconnectionServerData: VpnServiceBean = VpnServiceBean()
 
     fun initServerData() {
-        val bestData = SmileKey.getFastVpn() ?: return
+        val bestData = DualContext.getFastVpn() ?: return
         ProfileManager.getProfile(DataStore.profileId).let {
             if (it != null) {
-                ProfileManager.updateProfile(SmileUtils.setSkServerData(it, bestData))
+                ProfileManager.updateProfile(DulaShowDataUtils.setSkServerData(it, bestData))
             } else {
                 val profile = Profile()
-                ProfileManager.createProfile(SmileUtils.setSkServerData(profile, bestData))
+                ProfileManager.createProfile(DulaShowDataUtils.setSkServerData(profile, bestData))
             }
         }
-        bestData.best_smart = true
+        bestData.best_dualLoad = true
         DataStore.profileId = 1L
         currentServerData = bestData
         val serviceData = Gson().toJson(currentServerData)
-        SmileKey.check_service = serviceData
+        DualContext.localStorage.check_service = serviceData
         liveInitializeServerData.postValue(bestData)
     }
 
     fun updateSkServer(isConnect: Boolean) {
         val skVpnServiceBean = Gson().fromJson<VpnServiceBean>(
-            SmileKey.check_service,
+            DualContext.localStorage.check_service,
             object : TypeToken<VpnServiceBean?>() {}.type
         )
         ProfileManager.getProfile(DataStore.profileId).let {
             if (it != null) {
-                SmileUtils.setSkServerData(it, skVpnServiceBean)
+                DulaShowDataUtils.setSkServerData(it, skVpnServiceBean)
                 ProfileManager.updateProfile(it)
             } else {
                 ProfileManager.createProfile(Profile())
@@ -426,34 +334,34 @@ class MainViewModel : ViewModel() {
         } else {
             currentServerData = skVpnServiceBean
             val serviceData = Gson().toJson(currentServerData)
-            SmileKey.check_service = serviceData
+            DualContext.localStorage.check_service = serviceData
             liveNoUpdateServerData.postValue(skVpnServiceBean)
         }
     }
 
     fun setOpenData(activity: MainActivity, server: IOpenVPNAPIService): Job {
         return MainScope().launch(Dispatchers.IO) {
-            val data = SmileKey.check_service.isEmpty().let {
+            val data = DualContext.localStorage.check_service.isEmpty().let {
                 if (it) {
-                    SmileKey.getAllVpnListData()?.firstOrNull()
+                    DualContext.getAllVpnListData()?.firstOrNull()
                 } else {
                     Gson().fromJson<VpnServiceBean>(
-                        SmileKey.check_service,
+                        DualContext.localStorage.check_service,
                         object : TypeToken<VpnServiceBean?>() {}.type
                     )
                 }
             }
-            SmileKey.vpn_city = data?.city ?: ""
-            SmileKey.vpn_ip = data?.ip ?: ""
+            DualContext.localStorage.vpn_city = data?.city ?: ""
+            DualContext.localStorage.vpn_ip_dualLoad = data?.ip ?: ""
             runCatching {
                 val config = StringBuilder()
-                activity.assets.open("fast_bloomingvpn.ovpn").use { inputStream ->
+                activity.assets.open("fast_ippooltest.ovpn").use { inputStream ->
                     inputStream.bufferedReader().use { reader ->
                         reader.forEachLine { line ->
                             config.append(
                                 when {
                                     line.contains(
-                                        "remote 103",
+                                        "remote 102",
                                         true
                                     ) -> "remote ${data?.ip} 443"
 
@@ -532,7 +440,7 @@ class MainViewModel : ViewModel() {
     }
 
     private fun isIllegalIp(): Boolean {
-        val ipData = SmileKey.ip_gsd
+        val ipData = DualContext.localStorage.ip_gsd
         if (ipData.isEmpty()) {
             return isIllegalIp2()
         }
@@ -542,7 +450,7 @@ class MainViewModel : ViewModel() {
     }
 
     private fun isIllegalIp2(): Boolean {
-        val ipData = SmileKey.ip_gsd_oth
+        val ipData = DualContext.localStorage.ip_gsd_oth
         val locale = Locale.getDefault()
         val language = locale.language
         if (ipData.isEmpty()) {

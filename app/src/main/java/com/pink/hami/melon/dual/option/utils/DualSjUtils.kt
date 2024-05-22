@@ -35,7 +35,7 @@ class TimeUtils {
 
     fun startTiming() {
         if (isStopThread) {
-            TimeData.startTiming()
+            DualSjHelp.startTiming()
             sendTimerInformation()
         }
         isStopThread = false
@@ -44,7 +44,7 @@ class TimeUtils {
     fun endTiming() {
         isStopThread = true
         job?.cancel()
-        TimeData.endTiming()
+        DualSjHelp.endTiming()
         listener?.onTimeChanged()
     }
 

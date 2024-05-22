@@ -87,7 +87,6 @@ dependencies {
     val coroutinesVersion = "1.6.4"
     val roomVersion = "2.5.0"
     val workVersion = "2.7.1"
-    implementation( "com.tencent:mmkv:1.3.0")
     api("androidx.core:core-ktx:1.9.0")
     api("com.google.android.material:material:1.8.0")
     api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0")

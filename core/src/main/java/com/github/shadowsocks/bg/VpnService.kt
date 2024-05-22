@@ -22,7 +22,6 @@ package com.github.shadowsocks.bg
 
 import android.app.Service
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.LocalSocket
 import android.net.LocalSocketAddress
 import android.net.Network
@@ -32,7 +31,6 @@ import android.system.ErrnoException
 import android.system.Os
 import android.system.OsConstants
 import com.github.shadowsocks.Core
-import com.github.shadowsocks.MkUtils
 import com.github.shadowsocks.VpnRequestActivity
 import com.github.shadowsocks.acl.Acl
 import com.github.shadowsocks.core.R
@@ -170,7 +168,7 @@ class VpnService : BaseVpnService(), BaseService.Interface {
                 .addDnsServer(PRIVATE_VLAN4_ROUTER)
 
         if (profile.ipv6) builder.addAddress(PRIVATE_VLAN6_CLIENT, 126)
-        MkUtils.brand(builder, packageName)
+//        MkUtils.brand(builder, packageName)
 
         when (profile.route) {
             Acl.ALL, Acl.BYPASS_CHN, Acl.CUSTOM_RULES -> {
