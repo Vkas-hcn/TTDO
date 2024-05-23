@@ -12,6 +12,7 @@ import com.pink.hami.melon.dual.option.ui.main.MainActivity
 import com.pink.hami.melon.dual.option.utils.DualContext
 import com.github.shadowsocks.Core
 import com.tencent.mmkv.MMKV
+import de.blinkt.openvpn.OPenSpUtils
 import java.util.UUID
 
 class App : Application(), Application.ActivityLifecycleCallbacks {
@@ -35,6 +36,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         super.onCreate()
         MMKV.initialize(this)
         Core.init(this, MainActivity::class)
+        OPenSpUtils.initOpenContext(this)
         registerActivityLifecycleCallbacks(this)
         iniApp()
     }

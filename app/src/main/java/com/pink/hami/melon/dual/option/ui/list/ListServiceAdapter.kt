@@ -41,19 +41,21 @@ class ListServiceAdapter(private val dataList: MutableList<VpnServiceBean>) :
         onItemClickListener = listener
     }
 
+
     private fun onItemClick(position: Int) {
-        onItemClickListener?.onItemClick(position)
+        if (position != -1 ) {
+            onItemClickListener?.onItemClick(filteredList[position])
+        }
     }
 
+
     interface OnItemClickListener {
-        fun onItemClick(position: Int)
+        fun onItemClick(positionBean: VpnServiceBean)
     }
 
     @SuppressLint("UseCompatLoadingForDrawables")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = filteredList[position]
-
-        // Handle item visibility based on hideViewShow field
         if (item.hideViewShow) {
             holder.itemView.visibility = View.GONE
             holder.itemView.layoutParams = RecyclerView.LayoutParams(0, 0)

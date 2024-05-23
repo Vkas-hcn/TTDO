@@ -14,27 +14,27 @@ import com.google.gson.Gson
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.ui.list.VerticalSpaceItemDecoration
 
-class ListFunHelp : ViewModel() {
+object ListFunHelp {
     lateinit var allVpnListData: MutableList<VpnServiceBean>
-    lateinit var listServiceAdapter: ListServiceAdapter
+     var listServiceAdapter: ListServiceAdapter?=null
     var ecVpnServiceBeanList: MutableList<VpnServiceBean> = ArrayList()
     lateinit var checkSkVpnServiceBean: VpnServiceBean
     lateinit var checkSkVpnServiceBeanClick: VpnServiceBean
 
-    fun selectServer(activity: AppCompatActivity, position: Int) {
-        if (isSameServerSelected(position)) {
+    fun selectServer(activity: AppCompatActivity, positionBean: VpnServiceBean) {
+        if (isSameServerSelected(positionBean)) {
             handleSameServerSelected(activity)
             return
         }
 
-        updateServerSelection(position)
-        listServiceAdapter.notifyDataSetChanged()
+        updateServerSelection(positionBean)
+        listServiceAdapter?.notifyDataSetChanged()
         showDisconnectDialog(activity)
     }
 
-    private fun isSameServerSelected(position: Int): Boolean {
-        return ecVpnServiceBeanList[position].ip == checkSkVpnServiceBeanClick.ip &&
-                ecVpnServiceBeanList[position].best_dualLoad == checkSkVpnServiceBeanClick.best_dualLoad
+    private fun isSameServerSelected(positionBean: VpnServiceBean): Boolean {
+        return positionBean.ip == checkSkVpnServiceBeanClick.ip &&
+                positionBean.best_dualLoad == checkSkVpnServiceBeanClick.best_dualLoad
     }
 
     private fun handleSameServerSelected(activity: AppCompatActivity) {
@@ -45,9 +45,9 @@ class ListFunHelp : ViewModel() {
         }
     }
 
-    private fun updateServerSelection(position: Int) {
-        ecVpnServiceBeanList.forEachIndexed { index, _ ->
-            ecVpnServiceBeanList[index].check_dualLoad = position == index
+    private fun updateServerSelection(positionBean: VpnServiceBean) {
+        ecVpnServiceBeanList.forEachIndexed { index, item ->
+            ecVpnServiceBeanList[index].check_dualLoad = positionBean == item
             if (ecVpnServiceBeanList[index].check_dualLoad) {
                 checkSkVpnServiceBean = ecVpnServiceBeanList[index]
             }
@@ -56,7 +56,7 @@ class ListFunHelp : ViewModel() {
 
     fun initAllAdapter(
         activity: ListActivity,
-        onClick: (activity: ListActivity, position: Int) -> Unit
+        onClick: (activity: ListActivity, positionBean: VpnServiceBean) -> Unit
     ) {
         getAllServer()
         activity.binding.rvList.adapter = listServiceAdapter
@@ -65,9 +65,9 @@ class ListFunHelp : ViewModel() {
             androidx.recyclerview.widget.LinearLayoutManager(activity)
         activity.binding.rvList.addItemDecoration(VerticalSpaceItemDecoration(verticalSpaceHeight))
 
-        listServiceAdapter.setOnItemClickListener(object : ListServiceAdapter.OnItemClickListener {
-            override fun onItemClick(position: Int) {
-                onClick(activity, position)
+        listServiceAdapter?.setOnItemClickListener(object : ListServiceAdapter.OnItemClickListener {
+            override fun onItemClick(positionBean: VpnServiceBean) {
+                onClick(activity, positionBean)
             }
         })
     }
@@ -141,7 +141,7 @@ class ListFunHelp : ViewModel() {
     private fun handleCancelClick(dialog: DialogInterface) {
         dialog.dismiss()
         updateEcVpnServiceBeanListSelection()
-        listServiceAdapter.notifyDataSetChanged()
+        listServiceAdapter?.notifyDataSetChanged()
     }
 
     private fun handleDisconnectClick(dialog: DialogInterface, activity: AppCompatActivity) {

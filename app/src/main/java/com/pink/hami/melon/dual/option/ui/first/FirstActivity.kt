@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.view.animation.LinearInterpolator
 import androidx.activity.addCallback
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import com.pink.hami.melon.dual.option.base.BaseActivity
 import com.pink.hami.melon.dual.option.funutils.FirstFunHelp
@@ -16,9 +17,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class FirstActivity : BaseActivity<ActivityFirstBinding, FirstFunHelp>(
-    R.layout.activity_first, FirstFunHelp::class.java
-) {
+class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first) {
+    val toMainLive = MutableLiveData<String>()
+
     override fun initViewComponents() {
         setupBackPressedCallback()
     }
@@ -36,7 +37,7 @@ class FirstActivity : BaseActivity<ActivityFirstBinding, FirstFunHelp>(
     }
 
     private fun observeViewModel() {
-        viewModel.toMainLive.observe(this) { navigateTo ->
+        toMainLive.observe(this) { navigateTo ->
             if (navigateTo == "main") {
                 navigateToMainActivity()
             }
@@ -72,7 +73,7 @@ class FirstActivity : BaseActivity<ActivityFirstBinding, FirstFunHelp>(
 
     private fun createCountdownAnimator(): ValueAnimator {
         val animator = ValueAnimator.ofInt(0, 100)
-        animator.duration = 2000 // 2秒钟
+        animator.duration = 2000
         animator.interpolator = LinearInterpolator()
         animator.addUpdateListener { animation ->
             updateProgressBar(animation.animatedValue as Int)
@@ -93,6 +94,6 @@ class FirstActivity : BaseActivity<ActivityFirstBinding, FirstFunHelp>(
     }
 
     private fun onCountdownFinished() {
-        viewModel.toMainLive.postValue("main")
+       toMainLive.postValue("main")
     }
 }

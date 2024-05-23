@@ -123,6 +123,7 @@ object DualONlineFun {
         smileNetManager.getServiceData(DualContext.put_dualLoad_service_data_url, {
             val data = DulaShowDataUtils.dropReversed(it)
             DualContext.localStorage.vpn_online_data_dualLoad = data
+            Log.e(TAG, "landingRemoteData: success->$${DualContext.localStorage.vpn_online_data_dualLoad}")
             val timeEnd = ((System.currentTimeMillis() - timeStart) / 1000).toInt()
             emitPointData(context, "blom2t", "time", timeEnd)
             emitPointData(context, "blom2")

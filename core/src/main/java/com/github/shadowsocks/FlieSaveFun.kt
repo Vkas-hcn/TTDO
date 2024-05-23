@@ -22,7 +22,6 @@ object FlieSaveFun {
     }
     fun loadData(): String? {
         return try {
-            Log.e("TAG", "loadData-ss: ${Core.app.filesDir}")
             val file = File(Core.app.filesDir, "shared_data.json")
             if (file.exists()) {
                 FileReader(file).use { it.readText() }
@@ -78,7 +77,6 @@ object FlieSaveFun {
         val bean = Gson().fromJson(jsonData, AppData::class.java)
         bean.dual_sp_dow = "${speedData.value1} ${speedData.unit1}"
         bean.dual_sp_up = "${speedData.value2} ${speedData.unit2}"
-        Log.e("TAG", "getSpeedData: $bean")
         saveData(Gson().toJson(bean))
     }
 }

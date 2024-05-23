@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import com.pink.hami.melon.dual.option.databinding.ActivityWebNetBinding
 import com.pink.hami.melon.dual.option.utils.DualContext
 
-class WebFunHelp:ViewModel() {
+object WebFunHelp {
     fun initWeb(binding : ActivityWebNetBinding){
         binding.webViewDual.loadUrl(DualContext.web_dualLoadile_url)
         binding.webViewDual.settings.javaScriptEnabled = true

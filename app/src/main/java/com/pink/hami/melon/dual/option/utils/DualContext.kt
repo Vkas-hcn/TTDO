@@ -48,6 +48,16 @@ object DualContext {
             fetchOnlineDataIfNecessary(context)
             false
         } else {
+            val serviceData = Gson().fromJson<VpnServiceBean>(
+                localStorage.check_service,
+                object : TypeToken<VpnServiceBean?>() {}.type
+            )
+            val skVpnServiceBean: VpnServiceBean = if (serviceData.best_dualLoad) {
+                getFastVpn() ?: VpnServiceBean()
+            } else {
+                serviceData
+            }
+            localStorage.check_service = Gson().toJson(skVpnServiceBean)
             true
         }
     }

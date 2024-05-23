@@ -17,7 +17,6 @@ import androidx.preference.PreferenceDataStore
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.app.App.Companion.TAG
 import com.pink.hami.melon.dual.option.base.BaseActivity
-import com.pink.hami.melon.dual.option.funutils.MainFunHelp
 import com.pink.hami.melon.dual.option.ui.wwwwgidasd.aaagggg.AgreementActivity
 import com.pink.hami.melon.dual.option.utils.DualContext
 import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils
@@ -37,17 +36,34 @@ import kotlinx.coroutines.launch
 import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.databinding.ActivityMainBinding
+import com.pink.hami.melon.dual.option.funutils.MainFunHelp
 import com.pink.hami.melon.dual.option.utils.TimerObservers
+import com.pink.hami.melon.dual.option.utils.net.DialogHandler
+import com.pink.hami.melon.dual.option.utils.net.IpChecker
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 
-class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
-    R.layout.activity_main, MainFunHelp::class.java
-),
+class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
     ShadowsocksConnection.Callback,
     OnPreferenceDataStoreChangeListener {
+    companion object {
+        var stateListener: ((BaseService.State) -> Unit)? = null
+    }
+
+    enum class AgreementStatus {
+        Auto,
+        SS,
+        Open
+    }
+
+    private lateinit var ipChecker: IpChecker
+    private lateinit var dialogHandler: DialogHandler
+    lateinit var mainFun: MainFunHelp
     override fun initViewComponents() {
+        mainFun = MainFunHelp()
+        ipChecker = IpChecker(this)
+        dialogHandler = DialogHandler(this)
         clickListener()
         initVpnSetting()
         setServiceData()
@@ -56,7 +72,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
                 binding.showGuide = false
                 binding.dlMain.close()
             } else {
-                viewModel.clickChange(this@MainActivity, nextFun = {
+                mainFun.clickChange(this@MainActivity, nextFun = {
                     finish()
                 })
             }
@@ -69,9 +85,11 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
     }
 
     override fun initializeData() {
-        if (viewModel.isCanUser(this) != 0) {
-            viewModel.initData(this, this)
+        if (ipChecker.checkIp()) {
+            dialogHandler.showCannotUseDialog()
+            return
         }
+        mainFun.initData(this, this)
     }
 
 
@@ -79,24 +97,21 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
         binding.agreement = DualContext.localStorage.connection_mode.ifEmpty { "0" }
         if (App.isAppRunning) {
             binding.showGuide = false
-            App.isAppRunning = false
         } else {
             binding.showGuide = !App.vpnLink
+            App.isAppRunning = true
         }
-//        viewModel.timeUtils = TimeUtils().apply {
-//            setListener(this@MainActivity)
-//        }
-
+        binding.llSetting.setOnClickListener { }
         binding.imgConnect.setOnClickListener {
             toClickConnect()
         }
         binding.llConnect.setOnClickListener {
-            viewModel.clickChange(this, nextFun = {
+            mainFun.clickChange(this, nextFun = {
                 toClickConnect()
             })
         }
         binding.lavDual.setOnClickListener {
-            viewModel.clickChange(this, nextFun = {
+            mainFun.clickChange(this, nextFun = {
                 toClickConnect()
             })
         }
@@ -104,8 +119,8 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
         }
 
         binding.imgSetting.setOnClickListener {
-            viewModel.clickDisConnect(this, nextFun = {
-                viewModel.clickChange(this, nextFun = {
+            mainFun.clickDisConnect(this, nextFun = {
+                mainFun.clickChange(this, nextFun = {
                     binding.dlMain.open()
                 })
             })
@@ -116,89 +131,90 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
         }
 
         binding.tvAuto.setOnClickListener {
-            viewModel.clickDisConnect(this, nextFun = {
-                viewModel.clickChange(this, nextFun = {
-                    checkAgreement("0")
+            mainFun.clickDisConnect(this, nextFun = {
+                mainFun.clickChange(this, nextFun = {
+                    checkAgreement(AgreementStatus.Auto)
                 })
             })
         }
         binding.tvOpen.setOnClickListener {
-            viewModel.clickDisConnect(this, nextFun = {
-                viewModel.clickChange(this, nextFun = {
-                    checkAgreement("1")
+            mainFun.clickDisConnect(this, nextFun = {
+                mainFun.clickChange(this, nextFun = {
+                    checkAgreement(AgreementStatus.SS)
                 })
             })
         }
         binding.tvSs.setOnClickListener {
-            viewModel.clickDisConnect(this, nextFun = {
-                viewModel.clickChange(this, nextFun = {
-                    checkAgreement("2")
+            mainFun.clickDisConnect(this, nextFun = {
+                mainFun.clickChange(this, nextFun = {
+                    checkAgreement(AgreementStatus.Open)
                 })
             })
         }
 
         binding.linearLayout.setOnClickListener {
-            viewModel.clickChange(this, nextFun = {
-                viewModel.jumpToServerList(this)
+            mainFun.clickChange(this, nextFun = {
+                mainFun.jumpToServerList(this)
             })
         }
     }
 
     private fun setServiceData() {
-        viewModel.liveInitializeServerData.observe(this) {
+        mainFun.liveInitializeServerData.observe(this) {
             it?.let {
-                viewModel.setFastInformation(it, binding)
+                mainFun.setFastInformation(it, binding)
             }
         }
 
-        viewModel.liveUpdateServerData.observe(this) {
+        mainFun.liveUpdateServerData.observe(this) {
             it?.let {
-                viewModel.whetherRefreshServer = true
+                mainFun.whetherRefreshServer = true
                 toConnectVpn()
             }
         }
-        viewModel.liveNoUpdateServerData.observe(this) {
+        mainFun.liveNoUpdateServerData.observe(this) {
             it?.let {
-                viewModel.whetherRefreshServer = false
-                viewModel.setFastInformation(it, binding)
+                mainFun.whetherRefreshServer = false
+                mainFun.setFastInformation(it, binding)
                 toConnectVpn()
             }
         }
     }
 
 
-    private fun checkAgreement(type: String) {
-        when (type) {
-            "0" -> {
-                binding.tvAuto.background =
-                    ContextCompat.getDrawable(this, R.drawable.bg_auto_text_op)
-                binding.tvSs.background = null
-                binding.tvOpen.background = null
-            }
+    private fun checkAgreement(state: AgreementStatus) {
+        if (state == AgreementStatus.Auto) {
+            binding.tvAuto.background =
+                ContextCompat.getDrawable(this, R.drawable.bg_auto_text_op)
+            binding.tvSs.background = null
+            binding.tvOpen.background = null
+        }
 
-            "1" -> {
-                binding.tvAuto.background = null
-                binding.tvSs.background = null
-                binding.tvOpen.background =
-                    ContextCompat.getDrawable(this, R.drawable.bg_auto_text_op)
-            }
+        if (state == AgreementStatus.SS) {
+            binding.tvAuto.background = null
+            binding.tvSs.background = null
+            binding.tvOpen.background =
+                ContextCompat.getDrawable(this, R.drawable.bg_auto_text_op)
+        }
 
-            "2" -> {
-                binding.tvAuto.background = null
-                binding.tvSs.background =
-                    ContextCompat.getDrawable(this, R.drawable.bg_auto_text_op)
-                binding.tvOpen.background = null
-            }
-
-
+        if (state == AgreementStatus.Open) {
+            binding.tvAuto.background = null
+            binding.tvSs.background =
+                ContextCompat.getDrawable(this, R.drawable.bg_auto_text_op)
+            binding.tvOpen.background = null
+        }
+        val type = when (state) {
+            AgreementStatus.Auto -> "0"
+            AgreementStatus.SS -> "1"
+            AgreementStatus.Open -> "2"
         }
         if (App.vpnLink) {
-            if (type == "1" && binding.agreement != "1") {
-                showSwitching(type)
+            if (state == AgreementStatus.SS && binding.agreement != "1") {
+                showSwitching(state)
                 return
             }
-            if (type != "1" && binding.agreement == "1") {
-                showSwitching(type)
+            if (state != AgreementStatus.SS && binding.agreement == "1") {
+                showSwitching(state)
                 return
             }
             binding.agreement = type
@@ -208,7 +224,12 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
         }
     }
 
-    private fun showSwitching(type: String) {
+    private fun showSwitching(state: AgreementStatus) {
+        val type = when (state) {
+            AgreementStatus.Auto -> "0"
+            AgreementStatus.SS -> "1"
+            AgreementStatus.Open -> "2"
+        }
         val dialogVpn: androidx.appcompat.app.AlertDialog =
             androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Tips")
@@ -236,7 +257,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
                 return@launch
             }
         }
-        toConnectVpn()
+        mainFun.updateSkServer(App.vpnLink)
     }
 
     private fun toConnectVpn() {
@@ -246,18 +267,19 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
                 binding.pbLoading.visibility = View.VISIBLE
                 delay(2000)
                 binding.pbLoading.visibility = View.GONE
-                viewModel.initServerData()
+                mainFun.initServerData()
                 return@launch
             }
             if (DulaShowDataUtils.isAppOnline(this@MainActivity)) {
                 if (!App.vpnLink) {
                     DualContext.localStorage.connection_mode = binding?.agreement!!
                 }
-                if (viewModel.isCanUser(this@MainActivity) == 0) {
+                if (ipChecker.checkIp()) {
+                    dialogHandler.showCannotUseDialog()
                     return@launch
                 }
                 if (binding.agreement == "1") {
-                    viewModel.startOpenVpn(this@MainActivity)
+                    mainFun.startOpenVpn(this@MainActivity)
                 } else {
                     connect.launch(null)
                 }
@@ -278,7 +300,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
             mConnection,
             BIND_AUTO_CREATE
         )
-        viewModel.requestPermissionForResultVPN =
+        mainFun.requestPermissionForResultVPN =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 requestPermissionForResult(it)
             }
@@ -289,14 +311,14 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
         if (it) {
             Toast.makeText(this, "No permission", Toast.LENGTH_SHORT).show()
         } else {
-            viewModel.startTheJudgment(this)
+            mainFun.startTheJudgment(this)
         }
     }
 
 
     private fun requestPermissionForResult(result: ActivityResult) {
         if (result.resultCode == RESULT_OK) {
-            viewModel.startTheJudgment(this)
+            mainFun.startTheJudgment(this)
         } else {
             Toast.makeText(this, "No permission", Toast.LENGTH_SHORT).show()
         }
@@ -307,9 +329,9 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
             className: ComponentName?,
             service: IBinder?,
         ) {
-            viewModel.mService = IOpenVPNAPIService.Stub.asInterface(service)
+            mainFun.mService = IOpenVPNAPIService.Stub.asInterface(service)
             try {
-                viewModel.mService?.registerStatusCallback(mCallback)
+                mainFun.mService?.registerStatusCallback(mCallback)
                 Log.e("open vpn mService", "mService onServiceConnected")
             } catch (e: Exception) {
                 Log.e("open vpn error", e.message.toString())
@@ -318,7 +340,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
 
         override fun onServiceDisconnected(className: ComponentName?) {
             Log.e("open vpn mService", "mService onServiceDisconnected")
-            viewModel.mService = null
+            mainFun.mService = null
         }
     }
     private val mCallback = object : IOpenVPNStatusCallback.Stub() {
@@ -335,29 +357,24 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
             when (state) {
                 "CONNECTED" -> {
                     App.vpnLink = true
-                    viewModel.connectOrDisconnectDual(this@MainActivity, true)
-                    viewModel.changeState(
+                    mainFun.connectOrDisconnectDual(this@MainActivity, true)
+                    mainFun.changeState(
                         state = BaseService.State.Idle,
-                        this@MainActivity,
-                        App.vpnLink
+                        this@MainActivity
                     )
 //                    binding.serviceState = "2"
                     handleDualTimerLock()
                 }
 
                 "RECONNECTING", "EXITING", "CONNECTRETRY" -> {
-                    viewModel.mService?.disconnect()
+                    mainFun.mService?.disconnect()
                 }
 
                 "NOPROCESS" -> {
-                    viewModel.mService?.disconnect()
+                    mainFun.mService?.disconnect()
                     App.vpnLink = false
-                    viewModel.connectOrDisconnectDual(this@MainActivity, true)
-                    viewModel.changeState(
-                        state = BaseService.State.Idle,
-                        this@MainActivity,
-                        App.vpnLink
-                    )
+                    mainFun.connectOrDisconnectDual(this@MainActivity, true)
+                    mainFun.changeState(state = BaseService.State.Idle, this@MainActivity)
                     handleDualTimerLock()
                 }
 
@@ -372,7 +389,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
 
     override fun onStart() {
         super.onStart()
-        viewModel.connection.bandwidthTimeout = 500
+        mainFun.connection.bandwidthTimeout = 500
     }
 
     override fun onResume() {
@@ -386,12 +403,12 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
     private fun handleDualTimerLock() {
         if (App.vpnLink) {
             binding.showGuide = false
-            viewModel.changeOfVpnStatus(this, "2")
+            mainFun.changeOfVpnStatus(this, "2")
             if (binding.tvTime.text.toString() == "00:00:00") {
 //                DualSjHelp.startTiming()
             }
         } else {
-            viewModel.changeOfVpnStatus(this, "0")
+            mainFun.changeOfVpnStatus(this, "0")
         }
     }
 
@@ -401,14 +418,14 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
 
     override fun onStop() {
         super.onStop()
-        viewModel.connection.bandwidthTimeout = 0
-        viewModel.stopOperate(this)
+        mainFun.connection.bandwidthTimeout = 0
+        mainFun.stopOperate(this)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         DataStore.publicStore.unregisterChangeListener(this)
-        viewModel.connection.disconnect(this)
+        mainFun.connection.disconnect(this)
         App.isBoot = false
         TimerObservers.removeObserver { timeString ->
             runOnUiThread {
@@ -422,20 +439,20 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
         if (requestCode == 0x567) {
             App.isBoot = false
         }
-        if (requestCode == 0x567 && viewModel.whetherRefreshServer) {
-            viewModel.setFastInformation(viewModel.afterDisconnectionServerData, binding)
-            val serviceData = Gson().toJson(viewModel.afterDisconnectionServerData)
+        if (requestCode == 0x567 && mainFun.whetherRefreshServer) {
+            mainFun.setFastInformation(mainFun.afterDisconnectionServerData, binding)
+            val serviceData = Gson().toJson(mainFun.afterDisconnectionServerData)
             DualContext.localStorage.check_service = serviceData
-            viewModel.currentServerData = viewModel.afterDisconnectionServerData
+            mainFun.currentServerData = mainFun.afterDisconnectionServerData
         }
         if (requestCode == 567) {
             when (App.serviceState) {
                 "disconnect" -> {
-                    viewModel.updateSkServer(false)
+                    mainFun.updateSkServer(false)
                 }
 
                 "connect" -> {
-                    viewModel.updateSkServer(true)
+                    mainFun.updateSkServer(true)
                 }
             }
             App.serviceState = "mo"
@@ -449,7 +466,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
                 binding.showGuide = false
                 binding.dlMain.close()
             } else {
-                viewModel.clickChange(this, nextFun = {
+                mainFun.clickChange(this, nextFun = {
                     finish()
                 })
             }
@@ -459,7 +476,7 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
 
     override fun stateChanged(state: BaseService.State, profileName: String?, msg: String?) {
         App.vpnLink = state.canStop
-        viewModel.changeState(state, this)
+        mainFun.changeState(state, this)
     }
 
     override fun onServiceConnected(service: IShadowsocksService) {
@@ -474,17 +491,11 @@ class MainActivity : BaseActivity<ActivityMainBinding, MainFunHelp>(
         }
     }
 
-    private fun setOpenVpnState() {
-        if (DualContext.localStorage.connection_mode == "1") {
-            handleDualTimerLock()
-        }
-    }
-
     override fun onPreferenceDataStoreChanged(store: PreferenceDataStore, key: String) {
         when (key) {
             Key.serviceMode -> {
-                viewModel.connection.disconnect(this)
-                viewModel.connection.connect(this, this)
+                mainFun.connection.disconnect(this)
+                mainFun.connection.connect(this, this)
             }
         }
     }

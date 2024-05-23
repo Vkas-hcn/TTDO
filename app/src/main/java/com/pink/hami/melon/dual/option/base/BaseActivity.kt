@@ -8,17 +8,11 @@ import androidx.databinding.ViewDataBinding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 
-abstract class BaseActivity<B : ViewDataBinding, VM : ViewModel>(
-    private val layoutId: Int,
-    private val viewModelClass: Class<VM>
-) : AppCompatActivity() {
+abstract class BaseActivity<B : ViewDataBinding>(private val layoutId: Int, ) : AppCompatActivity() {
 
     lateinit var binding: B
         private set
 
-    protected val viewModel: VM by lazy {
-        initializeViewModel()
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,10 +20,6 @@ abstract class BaseActivity<B : ViewDataBinding, VM : ViewModel>(
         setupLifecycleOwner()
         initViewComponents()
         initializeData()
-    }
-
-    private fun initializeViewModel(): VM {
-        return ViewModelProvider(this).get(viewModelClass)
     }
 
     private fun setupBinding() {

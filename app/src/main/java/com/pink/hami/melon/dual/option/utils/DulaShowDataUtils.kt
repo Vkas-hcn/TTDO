@@ -42,7 +42,6 @@ object DulaShowDataUtils {
         profile.remotePort = bestData.port
         return profile
     }
-
     fun isAppOnline(context: Context?): Boolean {
         if (context == null) {
             return false
@@ -56,10 +55,6 @@ object DulaShowDataUtils {
         }
         return false
     }
-    fun AppCompatActivity.isVisible(): Boolean {
-        return lifecycle.currentState == Lifecycle.State.RESUMED
-    }
-
     fun dropReversed(responseString:String):String{
         val trimmedString = responseString.drop(13)
         val reversedString = trimmedString.reversed()

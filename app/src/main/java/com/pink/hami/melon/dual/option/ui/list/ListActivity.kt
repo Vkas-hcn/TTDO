@@ -11,8 +11,8 @@ import com.pink.hami.melon.dual.option.utils.DualContext
 import com.google.gson.Gson
 import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getDualImage
 
-class ListActivity : BaseActivity<ActivityListBinding, ListFunHelp>(
-    R.layout.activity_list, ListFunHelp::class.java
+class ListActivity : BaseActivity<ActivityListBinding>(
+    R.layout.activity_list
 ) {
     override fun initViewComponents() {
         setupListeners()
@@ -26,43 +26,32 @@ class ListActivity : BaseActivity<ActivityListBinding, ListFunHelp>(
 
     private fun configureBackButton() {
         binding.imgBack.setOnClickListener {
-            viewModel.returnToHomePage(this)
+            ListFunHelp.returnToHomePage(this)
         }
     }
 
     private fun handleOnBackPressed() {
         onBackPressedDispatcher.addCallback(this) {
-            viewModel.returnToHomePage(this@ListActivity)
+            ListFunHelp.returnToHomePage(this@ListActivity)
         }
     }
 
     override fun initializeData() {
         if (DualContext.isHaveServeData(this)) {
-            showServiceList()
             setupVpnServiceBean()
             configureVpnServiceBeanDisplay()
             setupAdapter()
-        } else {
-            hideServiceList()
         }
     }
 
-    private fun showServiceList() {
-        binding.showList = true
-    }
-
-    private fun hideServiceList() {
-        binding.showList = false
-    }
-
     private fun setupVpnServiceBean() {
-        viewModel.checkSkVpnServiceBean = VpnServiceBean()
-        viewModel.checkSkVpnServiceBean = if (DualContext.localStorage.check_service.isBlank()) {
+        ListFunHelp.checkSkVpnServiceBean = VpnServiceBean()
+        ListFunHelp.checkSkVpnServiceBean = if (DualContext.localStorage.check_service.isBlank()) {
             DualContext.getFastVpn() ?: VpnServiceBean()
         } else {
             parseVpnServiceBean(DualContext.localStorage.check_service)
         }
-        viewModel.checkSkVpnServiceBeanClick = viewModel.checkSkVpnServiceBean
+        ListFunHelp.checkSkVpnServiceBeanClick = ListFunHelp.checkSkVpnServiceBean
     }
 
     private fun parseVpnServiceBean(json: String): VpnServiceBean {
@@ -70,7 +59,7 @@ class ListActivity : BaseActivity<ActivityListBinding, ListFunHelp>(
     }
 
     private fun configureVpnServiceBeanDisplay() {
-        val vpnServiceBean = viewModel.checkSkVpnServiceBean
+        val vpnServiceBean = ListFunHelp.checkSkVpnServiceBean
         if (vpnServiceBean.best_dualLoad) {
             displayFastServer()
         } else {
@@ -89,8 +78,8 @@ class ListActivity : BaseActivity<ActivityListBinding, ListFunHelp>(
     }
 
     private fun setupAdapter() {
-        viewModel.initAllAdapter(this) { activity, position ->
-            viewModel.selectServer(activity, position)
+        ListFunHelp.initAllAdapter(this) { activity, positionBean ->
+            ListFunHelp.selectServer(activity, positionBean)
         }
     }
 
@@ -102,6 +91,7 @@ class ListActivity : BaseActivity<ActivityListBinding, ListFunHelp>(
     }
 
     private fun filterServiceList(query: String) {
-        viewModel.listServiceAdapter.filter(query)
+        if(ListFunHelp.listServiceAdapter == null){return}
+        ListFunHelp.listServiceAdapter?.filter(query)
     }
 }

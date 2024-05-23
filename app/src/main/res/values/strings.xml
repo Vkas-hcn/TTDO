@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name" translatable="false">TTDO VPN</string>
     <string name="google_ad_id" translatable="false">ca-app-pub-3940256099942544~3347511713</string>
-    <string name="facebook_app_id" translatable="false">123</string>
+    <string name="ls" translatable="false">3616318175247400</string>
 
 </resources>

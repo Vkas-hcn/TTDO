@@ -12,8 +12,8 @@ import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.databinding.ActivityFinishBinding
 import com.pink.hami.melon.dual.option.funutils.FinishViewFun
 
-class FinishActivity : BaseActivity<ActivityFinishBinding, ViewModel>(
-    R.layout.activity_finish, ViewModel::class.java
+class FinishActivity : BaseActivity<ActivityFinishBinding>(
+    R.layout.activity_finish
 ) {
     private lateinit var vpnServiceBean: VpnServiceBean
     private var isConnect: Boolean = false
@@ -69,6 +69,7 @@ class FinishActivity : BaseActivity<ActivityFinishBinding, ViewModel>(
                 binding.tvEndState1.text = "Connected succeed"
                 binding.tvEndState2.text = "You are very safe right now!"
             }
+
             ConnectionStatus.DISCONNECTED -> {
                 binding.imgVpnEnd.setImageResource(R.drawable.ic_end_dis)
                 binding.tvEndState1.text = "Disconnection succeed"

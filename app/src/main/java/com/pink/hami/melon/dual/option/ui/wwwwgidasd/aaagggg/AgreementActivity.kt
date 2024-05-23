@@ -5,8 +5,8 @@ import com.pink.hami.melon.dual.option.databinding.ActivityWebNetBinding
 import com.pink.hami.melon.dual.option.funutils.WebFunHelp
 import com.pink.hami.melon.dual.option.R
 
-class AgreementActivity : BaseActivity<ActivityWebNetBinding, WebFunHelp>(
-    R.layout.activity_web_net, WebFunHelp::class.java
+class AgreementActivity : BaseActivity<ActivityWebNetBinding>(
+    R.layout.activity_web_net
 ) {
 
 
@@ -17,6 +17,6 @@ class AgreementActivity : BaseActivity<ActivityWebNetBinding, WebFunHelp>(
     }
 
     override fun initializeData() {
-        viewModel.initWeb(binding)
+        WebFunHelp.initWeb(binding)
     }
 }
