@@ -6,6 +6,7 @@ import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import com.pink.hami.melon.dual.option.app.App
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -69,7 +70,7 @@ class DualOnlineFac(private val context: Context) {
             override fun getHeaders(): Map<String, String> {
                 val headers = HashMap<String, String>()
                 headers["ZTM"] = "ZZ"
-                headers["SER"] = "com.pink.hami.melon.dual.option"
+                headers["SER"] = App.getAppContext().packageName
                 return headers
             }
         }
