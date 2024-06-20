@@ -1,4 +1,4 @@
-package com.pink.hami.melon.dual.option.ui.wwwwgidasd.aaagggg
+package com.pink.hami.melon.dual.option.bjfklieaf.fast.show.wwwwgidasd.aaagggg
 
 import com.pink.hami.melon.dual.option.base.BaseActivity
 import com.pink.hami.melon.dual.option.databinding.ActivityWebNetBinding

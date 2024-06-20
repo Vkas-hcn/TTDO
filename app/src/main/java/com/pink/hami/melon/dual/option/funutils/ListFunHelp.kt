@@ -1,18 +1,17 @@
 package com.pink.hami.melon.dual.option.funutils
 
-import androidx.lifecycle.ViewModel
 import android.app.AlertDialog
 import android.content.DialogInterface
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.bean.VpnServiceBean
-import com.pink.hami.melon.dual.option.ui.list.ListActivity
-import com.pink.hami.melon.dual.option.ui.list.ListServiceAdapter
+import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.list.ListActivity
+import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.list.ListServiceAdapter
 import com.pink.hami.melon.dual.option.utils.DualContext
 import com.google.gson.Gson
 import com.pink.hami.melon.dual.option.R
-import com.pink.hami.melon.dual.option.ui.list.VerticalSpaceItemDecoration
+import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.list.VerticalSpaceItemDecoration
 
 object ListFunHelp {
     lateinit var allVpnListData: MutableList<VpnServiceBean>

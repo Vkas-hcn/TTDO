@@ -43,7 +43,7 @@ object DualContext {
         }
     }
 
-    fun isHaveServeData(context: Context): Boolean {
+   suspend fun isHaveServeData(context: Context): Boolean {
         return if (getAllVpnListData() == null) {
             fetchOnlineDataIfNecessary(context)
             false

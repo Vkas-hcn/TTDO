@@ -1,4 +1,4 @@
-package com.pink.hami.melon.dual.option.ui.list
+package com.pink.hami.melon.dual.option.bjfklieaf.fast.show.list
 
 import android.annotation.SuppressLint
 import android.content.Context

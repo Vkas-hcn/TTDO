@@ -21,7 +21,7 @@
             android:value="@string/google_ad_id" />
         <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/ls"/>
         <activity
-            android:name=".ui.first.FirstActivity"
+            android:name=".bjfklieaf.fast.show.first.FirstActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
@@ -32,22 +32,22 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.main.MainActivity"
+            android:name=".bjfklieaf.fast.show.main.MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".ui.wwwwgidasd.aaagggg.AgreementActivity"
+            android:name=".bjfklieaf.fast.show.wwwwgidasd.aaagggg.AgreementActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".ui.finish.FinishActivity"
+            android:name=".bjfklieaf.fast.show.finish.FinishActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".ui.list.ListActivity"
+            android:name=".bjfklieaf.fast.show.list.ListActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:screenOrientation="portrait" />

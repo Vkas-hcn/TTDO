@@ -1,8 +1,9 @@
-package com.pink.hami.melon.dual.option.ui.finish
+package com.pink.hami.melon.dual.option.bjfklieaf.fast.show.finish
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.addCallback
-import androidx.lifecycle.ViewModel
 import com.pink.hami.melon.dual.option.base.BaseActivity
 import com.pink.hami.melon.dual.option.bean.VpnServiceBean
 import com.pink.hami.melon.dual.option.utils.DualContext
@@ -23,6 +24,11 @@ class FinishActivity : BaseActivity<ActivityFinishBinding>(
         extractBundleData()
         setupBackButton()
         addBackPressedCallback()
+        val data = Intent().apply {
+            // Add any data you want to return
+            putExtra("key", "value")
+        }
+        setResult(Activity.RESULT_OK, data)
     }
 
     private fun extractBundleData() {

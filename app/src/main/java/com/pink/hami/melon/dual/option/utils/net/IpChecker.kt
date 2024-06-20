@@ -4,7 +4,7 @@ import android.content.Context
 import com.pink.hami.melon.dual.option.utils.DualContext
 import java.util.Locale
 
-class IpChecker(private val context: Context) {
+class IpChecker() {
 
     fun checkIp(): Boolean {
         val ipData = fetchIpData()

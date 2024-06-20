@@ -7,8 +7,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Process
-import com.pink.hami.melon.dual.option.ui.first.FirstActivity
-import com.pink.hami.melon.dual.option.ui.main.MainActivity
+import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.first.FirstActivity
+import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.main.MainActivity
 import com.pink.hami.melon.dual.option.utils.DualContext
 import com.github.shadowsocks.Core
 import com.tencent.mmkv.MMKV
@@ -26,7 +26,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         var isBackDataDual = false
         var vpnLink = false
         var isBoot = false
-        var serviceState: String = "mo"
+        var serviceState: String = "-1"
         val mmkvDual by lazy {
             MMKV.mmkvWithID("DualLoad", MMKV.MULTI_PROCESS_MODE)
         }

@@ -9,7 +9,7 @@
 
         <variable
             name="serviceState"
-            type="String"
+            type="Integer"
             android:value="0" />
 
         <variable

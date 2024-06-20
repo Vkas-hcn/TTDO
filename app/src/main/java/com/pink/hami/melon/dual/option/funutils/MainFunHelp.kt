@@ -1,28 +1,24 @@
 package com.pink.hami.melon.dual.option.funutils
 
-import android.content.DialogInterface
 import android.content.Intent
-import android.graphics.Color
 import android.net.VpnService
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.app.App.Companion.TAG
 import com.pink.hami.melon.dual.option.bean.VpnServiceBean
 import com.pink.hami.melon.dual.option.databinding.ActivityMainBinding
-import com.pink.hami.melon.dual.option.ui.finish.FinishActivity
-import com.pink.hami.melon.dual.option.ui.list.ListActivity
-import com.pink.hami.melon.dual.option.ui.main.MainActivity
+import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.finish.FinishActivity
+import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.list.ListActivity
+import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.main.MainActivity
 import com.pink.hami.melon.dual.option.utils.DualContext
 import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils
 import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getDualImage
@@ -40,49 +36,38 @@ import com.pink.hami.melon.dual.option.utils.TimerManager
 import de.blinkt.openvpn.api.IOpenVPNAPIService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.Locale
-import kotlin.system.exitProcess
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStream
+import java.io.InputStreamReader
 
 class MainFunHelp {
     val connection = ShadowsocksConnection(true)
     var whetherRefreshServer = false
     var jobStartDual: Job? = null
 
-    var nowClickState: Int = 1
+    val liveInitializeServerData: MutableLiveData<VpnServiceBean> by lazy {
+        MutableLiveData<VpnServiceBean>()
+    }
+
+    val liveNoUpdateServerData: MutableLiveData<VpnServiceBean> by lazy {
+        MutableLiveData<VpnServiceBean>()
+    }
+
+    val liveUpdateServerData: MutableLiveData<VpnServiceBean?> by lazy {
+        MutableLiveData<VpnServiceBean?>()
+    }
+
+    var currentServerData: VpnServiceBean = VpnServiceBean()
+
+    var afterDisconnectionServerData: VpnServiceBean = VpnServiceBean()
+    var nowClickState: String = "1"
 
     var mService: IOpenVPNAPIService? = null
     lateinit var requestPermissionForResultVPN: ActivityResultLauncher<Intent?>
-
-    fun initData(
-        activity: MainActivity,
-        call: ShadowsocksConnection.Callback
-    ) {
-        val binding = activity.binding
-        changeState(BaseService.State.Idle, activity)
-        connection.connect(activity, call)
-        DataStore.publicStore.registerChangeListener(activity)
-
-        if (DualContext.localStorage.check_service.isEmpty()) {
-            initServerData()
-        } else {
-            val serviceData = Gson().fromJson<VpnServiceBean>(
-                DualContext.localStorage.check_service,
-                object : TypeToken<VpnServiceBean?>() {}.type
-            )
-            val currentServerData: VpnServiceBean = if (serviceData.best_dualLoad) {
-                DualContext.getFastVpn() ?: VpnServiceBean()
-            } else {
-                serviceData
-            }
-            setFastInformation(currentServerData, binding)
-        }
-        getSpeedData(activity)
-    }
 
     private fun getSpeedData(activity: MainActivity) {
         val fff = FileStorageManager(activity)
@@ -96,6 +81,93 @@ class MainFunHelp {
         }
     }
 
+
+
+
+    fun initData(activity: MainActivity, call: ShadowsocksConnection.Callback) {
+        initializeActivityState(activity, call)
+        DataStore.publicStore.registerChangeListener(activity)
+
+        if (DualContext.localStorage.check_service.isEmpty()) {
+            initServerData()
+        } else {
+            val serviceData = parseServiceData(DualContext.localStorage.check_service)
+            val currentServerData = getCurrentServerData(serviceData)
+            updateUiWithServerData(currentServerData, activity.binding)
+        }
+        fetchSpeedData(activity)
+        getSpeedData(activity)
+    }
+
+    private fun initializeActivityState(activity: MainActivity, call: ShadowsocksConnection.Callback) {
+        changeState(BaseService.State.Idle, activity)
+        connection.connect(activity, call)
+    }
+
+    private fun parseServiceData(serviceJson: String): VpnServiceBean {
+        return Gson().fromJson(serviceJson, object : TypeToken<VpnServiceBean?>() {}.type)
+    }
+
+    private fun getCurrentServerData(serviceData: VpnServiceBean): VpnServiceBean {
+        return if (serviceData.best_dualLoad) {
+            DualContext.getFastVpn() ?: VpnServiceBean()
+        } else {
+            serviceData
+        }
+    }
+
+    private fun updateUiWithServerData(serverData: VpnServiceBean, binding: ActivityMainBinding) {
+        if (serverData.best_dualLoad) {
+            binding.imgFlag.setImageResource("Fast Server".getDualImage())
+            binding.tvCountryName.text = "Fast Server"
+            binding.tvCountry.text = "·Fast Server·"
+        } else {
+            binding.imgFlag.setImageResource(serverData.country_name.getDualImage())
+            binding.tvCountryName.text = "${serverData.country_name}-${serverData.city}"
+            binding.tvCountry.text = "·${serverData.country_name}·"
+        }
+    }
+
+    fun initServerData() {
+        val bestData = fetchBestData() ?: return
+        val profile = fetchOrCreateProfile(DataStore.profileId)
+        updateProfileWithBestData(profile, bestData)
+        configureCurrentServer(bestData)
+        updateLocalStorage(bestData)
+        liveInitializeServerData.postValue(bestData)
+    }
+    private fun fetchSpeedData(activity: MainActivity) {
+        val fileStorageManager = FileStorageManager(activity)
+        activity.lifecycleScope.launch {
+            while (isActive) {
+                updateSpeedData(fileStorageManager, activity)
+                delay(500)
+            }
+        }
+    }
+
+    private suspend fun updateSpeedData(fileStorageManager: FileStorageManager, activity: MainActivity) {
+        val appData = fileStorageManager.loadData()?.let { parseAppData(it) }
+        activity.binding.tvDow.text = appData?.dual_sp_dow
+        activity.binding.tvUp.text = appData?.dual_sp_up
+    }
+
+    private fun parseAppData(json: String): AppData {
+        return Gson().fromJson(json, AppData::class.java)
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
     fun changeState(
         state: BaseService.State = BaseService.State.Idle,
         activity: MainActivity,
@@ -104,7 +176,7 @@ class MainFunHelp {
         MainActivity.stateListener?.invoke(state)
     }
 
-    fun jumpToServerList(activity: MainActivity) {
+    fun papgeAtVpnServices(activity: MainActivity) {
         activity.lifecycleScope.launch {
             if (activity.lifecycle.currentState != Lifecycle.State.RESUMED) {
                 return@launch
@@ -114,11 +186,11 @@ class MainFunHelp {
                 delay(2000)
             }
             activity.binding.pbLoading.visibility = View.INVISIBLE
-            activity.launchActivityForResult<ListActivity>(null, 567)
+            activity.serverListLauncher.launch(Intent(activity, ListActivity::class.java))
         }
     }
 
-    fun setFastInformation(meteorVpnBean: VpnServiceBean, binding: ActivityMainBinding) {
+    fun haveSmService(meteorVpnBean: VpnServiceBean, binding: ActivityMainBinding) {
         if (meteorVpnBean.best_dualLoad) {
             binding.imgFlag.setImageResource("Fast Server".getDualImage())
             binding.tvCountryName.text = "Fast Server"
@@ -137,16 +209,16 @@ class MainFunHelp {
     private fun startVpn(activity: AppCompatActivity) {
         jobStartDual = activity.lifecycleScope.launch {
             nowClickState = if (App.vpnLink) {
-                2
+                "2"
             } else {
-                0
+                "0"
             }
-            changeOfVpnStatus(activity as MainActivity, "1")
-            connectVpn(activity)
+            setTypeService(activity as MainActivity, 1)
+            ljVPn(activity)
         }
     }
 
-    private suspend fun connectVpn(activity: MainActivity) {
+    private suspend fun ljVPn(activity: MainActivity) {
         if (!App.vpnLink) {
             activity.lifecycleScope.launch(Dispatchers.IO) {
                 if (activity.binding.agreement == "1") {
@@ -162,27 +234,27 @@ class MainFunHelp {
             }
         } else {
             delay(2000)
-            connectOrDisconnectDual(activity, activity.binding.agreement == "1")
+            canChangingFun(activity, activity.binding.agreement == "1")
         }
     }
 
 
-    fun disconnectVpn() {
+    fun dkVPn() {
         if (App.vpnLink) {
             Core.stopService()
         }
     }
 
-    fun connectOrDisconnectDual(activity: MainActivity, isOpenJump: Boolean = false) {
-        if (nowClickState == 2) {
+    fun canChangingFun(activity: MainActivity, isOpenJump: Boolean = false) {
+        if (nowClickState == "2") {
             mService?.disconnect()
-            disconnectVpn()
-            changeOfVpnStatus(activity, "0")
+            dkVPn()
+            setTypeService(activity, 0)
             if (!App.isBackDataDual) {
-                jumpToFinishPage(activity, false)
+                pageToRePage(activity, false)
             }
         }
-        if (nowClickState == 0) {
+        if (nowClickState == "0") {
             if (!App.vpnLink) {
                 activity.lifecycleScope.launch(Dispatchers.Main) {
                     Toast.makeText(activity, "The connection failed", Toast.LENGTH_SHORT).show()
@@ -195,51 +267,51 @@ class MainFunHelp {
                 }
             }
             if (!App.isBackDataDual) {
-                jumpToFinishPage(activity, true)
+                pageToRePage(activity, true)
             }
-            changeOfVpnStatus(activity, "2")
+            setTypeService(activity, 2)
         }
 
     }
 
-    private fun jumpToFinishPage(activity: MainActivity, isConnect: Boolean) {
+    private fun pageToRePage(activity: MainActivity, isConnect: Boolean) {
         activity.lifecycleScope.launch {
             delay(300L)
             if (activity.lifecycle.currentState != Lifecycle.State.RESUMED) {
                 return@launch
             }
-            val bundle = Bundle()
-            bundle.putString(DualContext.cuDualConnected, DualContext.localStorage.check_service)
-            bundle.putBoolean(DualContext.isDualConnected, isConnect)
-            val intent = Intent(activity, FinishActivity::class.java)
-            intent.putExtras(bundle)
-            activity.startActivityForResult(intent, 0x567)
+            val bundle = Bundle().apply {
+                putString(DualContext.cuDualConnected, DualContext.localStorage.check_service)
+                putBoolean(DualContext.isDualConnected, isConnect)
+            }
+            val intent = Intent(activity, FinishActivity::class.java).apply {
+                putExtras(bundle)
+            }
+            activity.finishPageLauncher.launch(intent)
         }
-
     }
 
     private fun connectionStatusJudgment(
         activity: MainActivity
     ) {
         if (App.vpnLink) {
-            changeOfVpnStatus(activity, "2")
-            connectOrDisconnectDual(activity)
+            setTypeService(activity, 2)
+            canChangingFun(activity)
         } else {
-            changeOfVpnStatus(activity, "0")
+            setTypeService(activity, 0)
 
         }
 
     }
 
-    fun changeOfVpnStatus(
+    fun setTypeService(
         activity: MainActivity,
-        stateInt: String
+        stateInt: Int
     ) {
         val binding = activity.binding
         binding.serviceState = stateInt
-        Log.e(TAG, "changeOfVpnStatus: ${stateInt}")
         when (stateInt) {
-            "0" -> {
+            0 -> {
                 TimerManager.resetTimer()
                 binding.llConnect.background =
                     activity.resources.getDrawable(R.drawable.bg_connect_op)
@@ -252,7 +324,7 @@ class MainFunHelp {
                 binding.tvState.text = "Disconnected"
             }
 
-            "1" -> {
+           1 -> {
                 binding.llConnect.background =
                     activity.resources.getDrawable(R.drawable.bg_connect_op_2)
                 binding.lavConnect.visibility = View.VISIBLE
@@ -260,14 +332,14 @@ class MainFunHelp {
                 binding.imgHeart1.visibility = View.INVISIBLE
                 binding.imgHeart2.visibility = View.INVISIBLE
                 binding.imgLoading.visibility = View.VISIBLE
-                if (nowClickState == 2) {
+                if (nowClickState == "2") {
                     binding.tvState.text = "Disconnecting"
                 } else {
                     binding.tvState.text = "Connecting"
                 }
             }
 
-            "2" -> {
+            2 -> {
                 TimerManager.startTimer()
                 binding.llConnect.background =
                     activity.resources.getDrawable(R.drawable.bg_connect_op_2)
@@ -292,106 +364,133 @@ class MainFunHelp {
     }
 
 
-    val liveInitializeServerData: MutableLiveData<VpnServiceBean> by lazy {
-        MutableLiveData<VpnServiceBean>()
+
+    fun fetchBestData(): VpnServiceBean? {
+        return DualContext.getFastVpn()
     }
 
-    val liveNoUpdateServerData: MutableLiveData<VpnServiceBean> by lazy {
-        MutableLiveData<VpnServiceBean>()
-    }
-
-    val liveUpdateServerData: MutableLiveData<VpnServiceBean?> by lazy {
-        MutableLiveData<VpnServiceBean?>()
-    }
-
-    var currentServerData: VpnServiceBean = VpnServiceBean()
-
-    var afterDisconnectionServerData: VpnServiceBean = VpnServiceBean()
-
-    fun initServerData() {
-        val bestData = DualContext.getFastVpn() ?: return
-        ProfileManager.getProfile(DataStore.profileId).let {
-            if (it != null) {
-                ProfileManager.updateProfile(DulaShowDataUtils.setSkServerData(it, bestData))
-            } else {
-                val profile = Profile()
-                ProfileManager.createProfile(DulaShowDataUtils.setSkServerData(profile, bestData))
-            }
+    fun fetchOrCreateProfile(profileId: Long): Profile {
+        return ProfileManager.getProfile(profileId) ?: Profile().also {
+            ProfileManager.createProfile(it)
         }
-        bestData.best_dualLoad = true
+    }
+
+    fun updateProfileWithBestData(profile: Profile, bestData: VpnServiceBean) {
+        ProfileManager.updateProfile(DulaShowDataUtils.setSkServerData(profile, bestData))
         DataStore.profileId = 1L
+    }
+
+    fun configureCurrentServer(bestData: VpnServiceBean) {
+        bestData.best_dualLoad = true
         currentServerData = bestData
+    }
+
+    fun updateLocalStorage(bestData: VpnServiceBean) {
         val serviceData = Gson().toJson(currentServerData)
         DualContext.localStorage.check_service = serviceData
-        liveInitializeServerData.postValue(bestData)
     }
 
     fun updateSkServer(isConnect: Boolean) {
+        val skVpnServiceBean = fetchOrCreateServiceData()
+        val profile = fetchOrCreateProfile(DataStore.profileId)
+        updateProfileWithBestData(profile, skVpnServiceBean)
+
+        if (isConnect) {
+            handleConnection(skVpnServiceBean)
+        } else {
+            handleDisconnection(skVpnServiceBean)
+        }
+    }
+
+    fun fetchOrCreateServiceData(): VpnServiceBean {
         val serviceData = Gson().fromJson<VpnServiceBean>(
             DualContext.localStorage.check_service,
             object : TypeToken<VpnServiceBean?>() {}.type
         )
-        val skVpnServiceBean: VpnServiceBean = if (serviceData.best_dualLoad) {
+        return if (serviceData?.best_dualLoad == true) {
             DualContext.getFastVpn() ?: VpnServiceBean()
         } else {
-            serviceData
-        }
-        ProfileManager.getProfile(DataStore.profileId).let {
-            if (it != null) {
-                DulaShowDataUtils.setSkServerData(it, skVpnServiceBean)
-                ProfileManager.updateProfile(it)
-            } else {
-                ProfileManager.createProfile(Profile())
-            }
-        }
-        DataStore.profileId = 1L
-        if (isConnect) {
-            afterDisconnectionServerData = skVpnServiceBean
-            liveUpdateServerData.postValue(skVpnServiceBean)
-        } else {
-            currentServerData = skVpnServiceBean
-            val serviceData = Gson().toJson(currentServerData)
-            DualContext.localStorage.check_service = serviceData
-            liveNoUpdateServerData.postValue(skVpnServiceBean)
+            serviceData ?: VpnServiceBean()
         }
     }
 
+    fun handleConnection(skVpnServiceBean: VpnServiceBean) {
+        afterDisconnectionServerData = skVpnServiceBean
+        liveUpdateServerData.postValue(skVpnServiceBean)
+    }
+
+    fun handleDisconnection(skVpnServiceBean: VpnServiceBean) {
+        currentServerData = skVpnServiceBean
+        updateLocalStorage(skVpnServiceBean)
+        liveNoUpdateServerData.postValue(skVpnServiceBean)
+    }
+
     private fun setOpenData(activity: MainActivity, server: IOpenVPNAPIService) {
-        val data = DualContext.localStorage.check_service.isEmpty().let {
-            if (it) {
-                DualContext.getAllVpnListData()?.firstOrNull()
-            } else {
-                Gson().fromJson<VpnServiceBean>(
-                    DualContext.localStorage.check_service,
-                    object : TypeToken<VpnServiceBean?>() {}.type
-                )
-            }
+        val data = fetchVpnServiceData()
+        updateLocalStorageMy(data)
+        configureAndStartVPN(activity, server, data)
+    }
+
+    private fun fetchVpnServiceData(): VpnServiceBean? {
+        return if (DualContext.localStorage.check_service.isEmpty()) {
+            DualContext.getAllVpnListData()?.firstOrNull()
+        } else {
+            Gson().fromJson(
+                DualContext.localStorage.check_service,
+                object : TypeToken<VpnServiceBean?>() {}.type
+            )
         }
+    }
+
+    private fun updateLocalStorageMy(data: VpnServiceBean?) {
         DualContext.localStorage.vpn_city = data?.city ?: ""
         DualContext.localStorage.vpn_ip_dualLoad = data?.ip ?: ""
-        runCatching {
-            val config = StringBuilder()
-            activity.assets.open("fast_ippooltest.ovpn").use { inputStream ->
-                inputStream.bufferedReader().use { reader ->
-                    reader.forEachLine { line ->
-                        config.append(
-                            when {
-                                line.contains(
-                                    "remote 103",
-                                    true
-                                ) -> "remote ${data?.ip} 443"
+    }
 
-                                else -> line
-                            }
-                        ).append("\n")
-                    }
-                }
-            }
+    private fun configureAndStartVPN(activity: MainActivity, server: IOpenVPNAPIService, data: VpnServiceBean?) {
+        runCatching {
+            val config = buildVpnConfig(activity, data?.ip)
             Log.e(TAG, "step2: =$config")
-            server.startVPN(config.toString())
+            server.startVPN(config)
         }.onFailure { exception ->
             Log.e(TAG, "Error in step2: ${exception.message}")
         }
+    }
+
+    private fun buildVpnConfig(activity: MainActivity, ip: String?): String {
+        val config = StringBuilder()
+        var inputStream: InputStream? = null
+        var reader: BufferedReader? = null
+
+        try {
+            inputStream = activity.assets.open("fast_ippooltest.ovpn")
+            reader = BufferedReader(InputStreamReader(inputStream))
+
+            reader.forEachLine { line ->
+                config.append(
+                    if (line.contains("remote 103", true)) {
+                        "remote $ip 443"
+                    } else {
+                        line
+                    }
+                ).append("\n")
+            }
+        } catch (e: IOException) {
+            Log.e(TAG, "Error reading config file: ${e.message}")
+        } finally {
+            try {
+                reader?.close()
+            } catch (e: IOException) {
+                Log.e(TAG, "Error closing reader: ${e.message}")
+            }
+            try {
+                inputStream?.close()
+            } catch (e: IOException) {
+                Log.e(TAG, "Error closing inputStream: ${e.message}")
+            }
+        }
+
+        return config.toString()
     }
 
     fun startOpenVpn(activity: MainActivity) {
@@ -412,11 +511,11 @@ class MainFunHelp {
     }
 
     fun isConnectGuo(activity: MainActivity): Boolean {
-        return !(nowClickState == 0 && activity.binding.serviceState == "1")
+        return !(nowClickState == "0" && activity.binding.serviceState == 1)
     }
 
     fun clickDisConnect(activity: MainActivity, nextFun: () -> Unit) {
-        if (nowClickState == 2 && activity.binding.serviceState == "1") {
+        if (nowClickState == "2" && activity.binding.serviceState == 1) {
             stopOperate(activity)
         } else {
             nextFun()
@@ -440,9 +539,9 @@ class MainFunHelp {
         jobStartDual?.cancel()
         jobStartDual = null
         if (App.vpnLink) {
-            changeOfVpnStatus(activity, "2")
+            setTypeService(activity, 2)
         } else {
-            changeOfVpnStatus(activity, "0")
+            setTypeService(activity, 0)
         }
     }
 

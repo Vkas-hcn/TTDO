@@ -1,4 +1,4 @@
-package com.pink.hami.melon.dual.option.ui.first
+package com.pink.hami.melon.dual.option.bjfklieaf.fast.show.first
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
@@ -8,8 +8,7 @@ import androidx.activity.addCallback
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import com.pink.hami.melon.dual.option.base.BaseActivity
-import com.pink.hami.melon.dual.option.funutils.FirstFunHelp
-import com.pink.hami.melon.dual.option.ui.main.MainActivity
+import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.main.MainActivity
 import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.databinding.ActivityFirstBinding
@@ -26,7 +25,6 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
 
     private fun setupBackPressedCallback() {
         onBackPressedDispatcher.addCallback(this) {
-            // Custom back button behavior can be added here if needed
         }
     }
 

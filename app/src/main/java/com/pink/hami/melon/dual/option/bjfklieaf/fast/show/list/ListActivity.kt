@@ -1,7 +1,10 @@
-package com.pink.hami.melon.dual.option.ui.list
+package com.pink.hami.melon.dual.option.bjfklieaf.fast.show.list
 
+import android.app.Activity
+import android.content.Intent
 import androidx.activity.addCallback
 import androidx.core.widget.addTextChangedListener
+import androidx.lifecycle.lifecycleScope
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.base.BaseActivity
 import com.pink.hami.melon.dual.option.bean.VpnServiceBean
@@ -10,6 +13,7 @@ import com.pink.hami.melon.dual.option.funutils.ListFunHelp
 import com.pink.hami.melon.dual.option.utils.DualContext
 import com.google.gson.Gson
 import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getDualImage
+import kotlinx.coroutines.launch
 
 class ListActivity : BaseActivity<ActivityListBinding>(
     R.layout.activity_list
@@ -18,6 +22,11 @@ class ListActivity : BaseActivity<ActivityListBinding>(
         setupListeners()
         configureBackButton()
         handleOnBackPressed()
+        val data = Intent().apply {
+            // Add any data you want to return
+            putExtra("key", "value")
+        }
+        setResult(Activity.RESULT_OK, data)
     }
 
     private fun setupListeners() {
@@ -37,10 +46,12 @@ class ListActivity : BaseActivity<ActivityListBinding>(
     }
 
     override fun initializeData() {
-        if (DualContext.isHaveServeData(this)) {
-            setupVpnServiceBean()
-            configureVpnServiceBeanDisplay()
-            setupAdapter()
+        lifecycleScope.launch {
+            if (DualContext.isHaveServeData(this@ListActivity)) {
+                setupVpnServiceBean()
+                configureVpnServiceBeanDisplay()
+                setupAdapter()
+            }
         }
     }
 
