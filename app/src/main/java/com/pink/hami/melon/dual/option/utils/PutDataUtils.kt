@@ -62,7 +62,7 @@ object PutDataUtils {
 
     fun getTbaDataJson(context: Context, name: String): String {
         return firstJsonData(context).apply {
-            put("toy", name)
+            put("chestnut", name)
         }.toString()
     }
 
@@ -76,8 +76,8 @@ object PutDataUtils {
         val data = JSONObject()
         data.put(parameterName, time)
         return firstJsonData(context).apply {
-            put("toy", name)
-            put(name, JSONObject().apply {
+            put("chestnut", name)
+            put("gloria", JSONObject().apply {
                 put(parameterName, time)
             })
         }.toString()

@@ -44,7 +44,7 @@ object DualONlineFun {
             val params = blackData(context)
             try {
                 smileNetManager.getMapRequest(
-                    "https://withheld.writeonlinepennetproxy.com/donate/explain",
+                    "https://egypt.writeonlinepennetproxy.com/tao/veto/beta",
                     params,
                     object : DualOnlineFac.Callback {
                         override fun onSuccess(response: String) {
@@ -74,15 +74,15 @@ object DualONlineFun {
     @SuppressLint("HardwareIds")
     fun blackData(context: Context): Map<String, Any> {
         return mapOf(
-            "strata" to "com.writeonline.pennetproxy",
-            "slivery" to "ryder",
-            "megaword" to getAppVersion(context).orEmpty(),
-            "director" to DualContext.localStorage.uuid_dualLoadile,
-            "teammate" to System.currentTimeMillis(),
-            "hannah" to Build.MODEL,
-            "act" to Build.VERSION.RELEASE,
-            "receive" to DualContext.gidData,
-            "twenty" to Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+            "panic" to "com.tunix.vpn.proxymaster.fastvpn.bestvpn.freevpn",
+            "brain" to "perigee",
+            "academic" to getAppVersion(context).orEmpty(),
+            "tuft" to DualContext.localStorage.uuid_dualLoadile,
+            "terse" to System.currentTimeMillis(),
+            "johnson" to Build.MODEL,
+            "walter" to Build.VERSION.RELEASE,
+            "hoagy" to DualContext.gidData,
+            "be" to Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
         )
     }
 
