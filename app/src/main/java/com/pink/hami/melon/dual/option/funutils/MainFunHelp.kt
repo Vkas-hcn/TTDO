@@ -310,56 +310,53 @@ class MainFunHelp {
     ) {
         val binding = activity.binding
         binding.serviceState = stateInt
-        when (stateInt) {
-            0 -> {
-                TimerManager.resetTimer()
-                binding.llConnect.background =
-                    activity.resources.getDrawable(R.drawable.bg_connect_op)
-                binding.imgConnect.setImageResource(R.drawable.ic_connect_1)
-                binding.lavConnect.visibility = View.INVISIBLE
-                binding.imgConnect.visibility = View.VISIBLE
-                binding.imgHeart1.visibility = View.VISIBLE
-                binding.imgHeart2.visibility = View.INVISIBLE
-                binding.imgLoading.visibility = View.INVISIBLE
-                binding.tvState.text = "Disconnected"
-            }
+        if(stateInt== 0){
+            TimerManager.resetTimer()
+            binding.llConnect.background =
+                activity.resources.getDrawable(R.drawable.bg_connect_op)
+            binding.imgConnect.setImageResource(R.drawable.ic_connect_1)
+            binding.lavConnect.visibility = View.INVISIBLE
+            binding.imgConnect.visibility = View.VISIBLE
+            binding.imgHeart1.visibility = View.VISIBLE
+            binding.imgHeart2.visibility = View.INVISIBLE
+            binding.imgLoading.visibility = View.INVISIBLE
+            binding.tvState.text = "Disconnected"
+        }
 
-           1 -> {
-                binding.llConnect.background =
-                    activity.resources.getDrawable(R.drawable.bg_connect_op_2)
-                binding.lavConnect.visibility = View.VISIBLE
-                binding.imgConnect.visibility = View.INVISIBLE
-                binding.imgHeart1.visibility = View.INVISIBLE
-                binding.imgHeart2.visibility = View.INVISIBLE
-                binding.imgLoading.visibility = View.VISIBLE
-                if (nowClickState == "2") {
-                    binding.tvState.text = "Disconnecting"
-                } else {
-                    binding.tvState.text = "Connecting"
-                }
+        if(stateInt== 1){
+            binding.llConnect.background =
+                activity.resources.getDrawable(R.drawable.bg_connect_op_2)
+            binding.lavConnect.visibility = View.VISIBLE
+            binding.imgConnect.visibility = View.INVISIBLE
+            binding.imgHeart1.visibility = View.INVISIBLE
+            binding.imgHeart2.visibility = View.INVISIBLE
+            binding.imgLoading.visibility = View.VISIBLE
+            if (nowClickState == "2") {
+                binding.tvState.text = "Disconnecting"
+            } else {
+                binding.tvState.text = "Connecting"
             }
+        }
 
-            2 -> {
-                TimerManager.startTimer()
-                binding.llConnect.background =
-                    activity.resources.getDrawable(R.drawable.bg_connect_op_2)
-                binding.imgConnect.setImageResource(R.drawable.ic_connect_2)
-                binding.lavConnect.visibility = View.INVISIBLE
-                binding.imgConnect.visibility = View.VISIBLE
-                binding.imgHeart1.visibility = View.INVISIBLE
-                binding.imgHeart2.visibility = View.VISIBLE
-                binding.imgLoading.visibility = View.INVISIBLE
-                binding.tvState.text = "Connected"
-            }
-
-            else -> {
-                binding.imgConnect.setImageResource(R.drawable.ic_connect_1)
-                binding.lavConnect.visibility = View.INVISIBLE
-                binding.imgConnect.visibility = View.VISIBLE
-                binding.imgHeart1.visibility = View.VISIBLE
-                binding.imgHeart2.visibility = View.INVISIBLE
-                binding.imgLoading.visibility = View.INVISIBLE
-            }
+        if(stateInt== 2){
+            TimerManager.startTimer()
+            binding.llConnect.background =
+                activity.resources.getDrawable(R.drawable.bg_connect_op_2)
+            binding.imgConnect.setImageResource(R.drawable.ic_connect_2)
+            binding.lavConnect.visibility = View.INVISIBLE
+            binding.imgConnect.visibility = View.VISIBLE
+            binding.imgHeart1.visibility = View.INVISIBLE
+            binding.imgHeart2.visibility = View.VISIBLE
+            binding.imgLoading.visibility = View.INVISIBLE
+            binding.tvState.text = "Connected"
+        }
+        if(stateInt!=0 && stateInt!=1 && stateInt!=2){
+            binding.imgConnect.setImageResource(R.drawable.ic_connect_1)
+            binding.lavConnect.visibility = View.INVISIBLE
+            binding.imgConnect.visibility = View.VISIBLE
+            binding.imgHeart1.visibility = View.VISIBLE
+            binding.imgHeart2.visibility = View.INVISIBLE
+            binding.imgLoading.visibility = View.INVISIBLE
         }
     }
 

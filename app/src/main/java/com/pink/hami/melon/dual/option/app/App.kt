@@ -5,13 +5,14 @@ import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.Process
+import androidx.annotation.RequiresApi
 import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.first.FirstActivity
 import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.main.MainActivity
 import com.pink.hami.melon.dual.option.utils.DualContext
 import com.github.shadowsocks.Core
-import com.tencent.mmkv.MMKV
 import de.blinkt.openvpn.OPenSpUtils
 import java.util.UUID
 
@@ -27,14 +28,10 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         var vpnLink = false
         var isBoot = false
         var serviceState: String = "-1"
-        val mmkvDual by lazy {
-            MMKV.mmkvWithID("DualLoad", MMKV.MULTI_PROCESS_MODE)
-        }
         var isAppRunning = false
     }
     override fun onCreate() {
         super.onCreate()
-        MMKV.initialize(this)
         Core.init(this, MainActivity::class)
         OPenSpUtils.initOpenContext(this)
         registerActivityLifecycleCallbacks(this)

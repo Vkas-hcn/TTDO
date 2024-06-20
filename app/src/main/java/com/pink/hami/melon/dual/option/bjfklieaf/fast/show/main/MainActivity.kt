@@ -289,7 +289,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
                 mainFun.updateSkServer(true)
             }
         }
-        App.serviceState = "mo"
+        App.serviceState = "-1"
     }
 
     private fun handleFinishPageResult(data: Intent?) {

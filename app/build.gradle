@@ -71,6 +71,5 @@ dependencies {
     implementation 'com.airbnb.android:lottie:5.0.3'
     implementation project(':open')
     implementation project(':core')
-    implementation 'com.tencent:mmkv:1.3.0'
     implementation 'com.github.megatronking.stringfog:xor:4.0.1'
 }
