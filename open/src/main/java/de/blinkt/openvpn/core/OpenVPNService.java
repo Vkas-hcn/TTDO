@@ -1073,9 +1073,7 @@ public class OpenVPNService extends VpnService implements StateListener, Callbac
                 VpnStatus.logDebug("Orbot not installed?");
             }
         }
-//        MkUtils.INSTANCE.brand(builder, getPackageName());
-
-
+        OPenSpUtils.INSTANCE.brand(builder, getPackageName());
         if (mProfile.mAllowedAppsVpnAreDisallowed) {
             VpnStatus.logDebug(R.string.disallowed_vpn_apps_info, TextUtils.join(", ", mProfile.mAllowedAppsVpn));
         } else {

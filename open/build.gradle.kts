@@ -131,6 +131,5 @@ fun registerGenTask(variantName: String, variantDirName: String): File {
 dependencies {
     implementation("androidx.annotation:annotation:1.5.0")
     implementation("androidx.core:core:1.9.0")
-    implementation("com.blankj:utilcodex:1.31.1")
     implementation("com.google.code.gson:gson:2.10.1")
 }

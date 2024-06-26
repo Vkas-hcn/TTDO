@@ -480,9 +480,9 @@ Here is a brief set of guidelines:
 
 * When grabbing random entropy that is to be used
   for cryptographic purposes (i.e. for keys, tokens, etc.),
-  always ensure that the RNG is crypto-grade by calling
+  always ensure that the RNG is crypto-neta by calling
   :code:`assert_crypto()` on the RNG.  This will throw
-  an exception if the RNG is not crypto-grade:
+  an exception if the RNG is not crypto-neta:
   ::
 
     void set_rng(RandomAPI::Ptr rng_arg) {

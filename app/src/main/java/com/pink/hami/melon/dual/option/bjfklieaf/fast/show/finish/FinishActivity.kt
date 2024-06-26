@@ -4,14 +4,22 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.addCallback
+import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import com.pink.hami.melon.dual.option.base.BaseActivity
 import com.pink.hami.melon.dual.option.bean.VpnServiceBean
 import com.pink.hami.melon.dual.option.utils.DualContext
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.pink.hami.melon.dual.option.R
+import com.pink.hami.melon.dual.option.app.App
+import com.pink.hami.melon.dual.option.app.adload.GetAdData
 import com.pink.hami.melon.dual.option.databinding.ActivityFinishBinding
 import com.pink.hami.melon.dual.option.funutils.FinishViewFun
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class FinishActivity : BaseActivity<ActivityFinishBinding>(
     R.layout.activity_finish
@@ -19,7 +27,7 @@ class FinishActivity : BaseActivity<ActivityFinishBinding>(
     private lateinit var vpnServiceBean: VpnServiceBean
     private var isConnect: Boolean = false
     private lateinit var connectionStatus: ConnectionStatus
-
+    private var jobEndTdo:Job? = null
     override fun initViewComponents() {
         extractBundleData()
         setupBackButton()
@@ -29,6 +37,35 @@ class FinishActivity : BaseActivity<ActivityFinishBinding>(
             putExtra("key", "value")
         }
         setResult(Activity.RESULT_OK, data)
+        App.adManagerBack.loadAd()
+        App.adManagerEnd.loadAd()
+        showHomeAd()
+    }
+    private fun showHomeAd() {
+        jobEndTdo?.cancel()
+        jobEndTdo = null
+        if (App.adManagerHome.canShowAd() == 2) {
+            binding.imgOcAd.isVisible = true
+        }
+        jobEndTdo = lifecycleScope.launch {
+            delay(300)
+            while (isActive) {
+                if (App.adManagerEnd.canShowAd() ==0) {
+                    jobEndTdo?.cancel()
+                    jobEndTdo = null
+                    binding.adLayout.isVisible = false
+                    break
+                }
+                if (App.adManagerEnd.canShowAd() ==1) {
+                    App.adManagerEnd.showAd(this@FinishActivity) {
+                    }
+                    jobEndTdo?.cancel()
+                    jobEndTdo = null
+                    break
+                }
+                delay(500L)
+            }
+        }
     }
 
     private fun extractBundleData() {

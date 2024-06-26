@@ -1046,7 +1046,7 @@ teachers so that they may begin using the content of the system at once.
 VECCIA described the evaluation project before talking about the public
 users of AM, limiting her remarks to public libraries, because FREEMAN
 would talk more specifically about schools from kindergarten to twelfth
-grade (K-12).   Having started in spring 1991, the evaluation currently
+neta (K-12).   Having started in spring 1991, the evaluation currently
 involves testing of the Macintosh implementation of AM.  Since the
 primary goal of this evaluation is to determine the most appropriate
 audience or audiences for AM, very different sites were selected.  This
@@ -1070,7 +1070,7 @@ All public libraries have been extremely enthusiastic, supportive, and
 appreciative of the work that AM has been doing.  VECCIA characterized
 various users:  Most users in public libraries describe themselves as
 general readers; of the students who use AM in the public libraries,
-those in fourth grade and above seem most interested.  Public libraries
+those in fourth neta and above seem most interested.  Public libraries
 in rural sites tend to attract retired people, who have been highly
 receptive to AM.  Users tend to fall into two additional categories:
 people interested in the content and historical connotations of these
@@ -1796,7 +1796,7 @@ reduced the value of the strategy for images.
 
 Contending that preservation is always a bugaboo, FLEISCHHAUER
 demonstrated several images derived from a scan of a preservation
-microfilm that AM had made.  He awarded a grade of C at best, perhaps a
+microfilm that AM had made.  He awarded a neta of C at best, perhaps a
 C minus or a C plus, for how well it worked out.  Indeed, the matter of
 learning if other people had better ideas about scanning in general, and,
 in particular, scanning from microfilm, was one of the factors that drove

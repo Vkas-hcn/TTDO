@@ -12,6 +12,7 @@ import androidx.activity.addCallback
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceDataStore
 import com.github.shadowsocks.Core
@@ -35,13 +36,18 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import com.pink.hami.melon.dual.option.R
+import com.pink.hami.melon.dual.option.app.adload.GetAdData
 import com.pink.hami.melon.dual.option.databinding.ActivityMainBinding
 import com.pink.hami.melon.dual.option.funutils.MainFunHelp
 import com.pink.hami.melon.dual.option.utils.TimerObservers
 import com.pink.hami.melon.dual.option.utils.net.DialogHandler
 import com.pink.hami.melon.dual.option.utils.net.IpChecker
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 
 
 class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
@@ -65,6 +71,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
     private lateinit var ipChecker: IpChecker
     private lateinit var dialogHandler: DialogHandler
     lateinit var mainFun: MainFunHelp
+    private var jobHomeTdo: Job? = null
     override fun initViewComponents() {
         setMainCallback(this)
         mainInterface?.initThisInter()
@@ -104,9 +111,34 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
 //            return
 //        }
         mainFun.initData(this, this)
+        showHomeAd()
     }
 
+    private fun showHomeAd() {
+        jobHomeTdo?.cancel()
+        jobHomeTdo = null
+        if (App.adManagerHome.canShowAd() == 2) {
+            binding.imgOcAd.isVisible = true
+        }
+        jobHomeTdo = lifecycleScope.launch {
+            delay(300)
+            while (isActive) {
+                if (App.adManagerHome.canShowAd() == 0) {
+                    binding.adLayout.isVisible = false
+                    break
+                }
 
+                if (App.adManagerHome.canShowAd() == 1) {
+                    App.adManagerHome.showAd(this@MainActivity) {
+                    }
+                    jobHomeTdo?.cancel()
+                    jobHomeTdo = null
+                    break
+                }
+                delay(500L)
+            }
+        }
+    }
 
     private fun showSwitching(state: AgreementStatus) {
         val type = when (state) {
@@ -162,6 +194,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
 //                    dialogHandler.showCannotUseDialog()
 //                    return@launch
 //                }
+                homeLoadAd()
                 if (binding.agreement == "1") {
                     mainFun.startOpenVpn(this@MainActivity)
                 } else {
@@ -176,8 +209,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
             }
         }
     }
-
-
 
 
     private val connect = registerForActivityResult(StartService()) {
@@ -217,7 +248,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
         }
     }
     private val mCallback = object : IOpenVPNStatusCallback.Stub() {
-        override fun newStatus(uuid: String?, state: String?, message: String?, level: String?) {
+        override fun newStatus(
+            uuid: String?,
+            state: String?,
+            message: String?,
+            level: String?
+        ) {
             mainInterface?.openLifecycle(state)
         }
     }
@@ -269,22 +305,27 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
             }
         }
     }
-     val serverListLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            handleServerListResult(result.data)
-        }
-    }
 
-     val finishPageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            handleFinishPageResult(result.data)
+    val serverListLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                handleServerListResult(result.data)
+            }
         }
-    }
+
+    val finishPageLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                handleFinishPageResult(result.data)
+            }
+        }
+
     private fun handleServerListResult(data: Intent?) {
         when (App.serviceState) {
             "disconnect" -> {
                 mainFun.updateSkServer(false)
             }
+
             "connect" -> {
                 mainFun.updateSkServer(true)
             }
@@ -328,7 +369,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
             }
         }
     }
-
+    fun homeLoadAd(){
+        App.adManagerConnect.loadAd()
+        App.adManagerBack.loadAd()
+        App.adManagerEnd.loadAd()
+    }
     override fun openLifecycle(state: String?) {
         if (DualContext.localStorage.connection_mode != "1") {
             return
@@ -394,7 +439,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
                 return
             }
             binding.agreement = type
-
         } else {
             binding.agreement = type
         }
@@ -452,6 +496,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
                 })
             })
         }
+
         binding.tvOpen.setOnClickListener {
             mainFun.clickDisConnect(this, nextFun = {
                 mainFun.clickChange(this, nextFun = {
@@ -459,6 +504,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
                 })
             })
         }
+
         binding.tvSs.setOnClickListener {
             mainFun.clickDisConnect(this, nextFun = {
                 mainFun.clickChange(this, nextFun = {
@@ -483,7 +529,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
         mainFun.requestPermissionForResultVPN =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 requestPermissionForResult(it)
-            }    }
+            }
+    }
 
     override fun setServiceDataInter() {
         mainFun.liveInitializeServerData.observe(this) {
@@ -504,7 +551,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
                 mainFun.haveSmService(it, binding)
                 toConnectVpn()
             }
-        }    }
+        }
+    }
 
 
 }

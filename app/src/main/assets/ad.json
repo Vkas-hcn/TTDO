@@ -1,0 +1,50 @@
+{
+  "net1": 30,
+  "net2": 2,
+  "sadly": [
+    {
+      "netw": "ca-app-pub-3940256099942544/9257395921",
+      "nets": "open",
+      "neta": 1,
+      "netu": "GUIDE"
+    },
+    {
+      "netw": "ca-app-pub-3940256099942544/9257395921x",
+      "nets": "open",
+      "neta": 2,
+      "netu": "GUIDE"
+    }
+  ],
+  "cheap": [
+    {
+      "netw": "ca-app-pub-3940256099942544/2247696110",
+      "nets": "na",
+      "neta": 1,
+      "netu": "HOME"
+    }
+  ],
+  "mouth": [
+    {
+      "netw": "ca-app-pub-3940256099942544/2247696110",
+      "nets": "na",
+      "neta": 1,
+      "netu": "END"
+    }
+  ],
+  "bathe": [
+    {
+      "netw": "ca-app-pub-3940256099942544/8691691433",
+      "nets": "int",
+      "neta": 1,
+      "netu": "CONNECT"
+    }
+  ],
+  "ad_back": [
+    {
+      "netw": "ca-app-pub-3940256099942544/8691691433",
+      "nets": "int",
+      "neta": 1,
+      "netu": "BACK"
+    }
+  ]
+}

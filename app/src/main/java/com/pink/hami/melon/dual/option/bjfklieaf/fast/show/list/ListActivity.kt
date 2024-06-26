@@ -12,6 +12,8 @@ import com.pink.hami.melon.dual.option.databinding.ActivityListBinding
 import com.pink.hami.melon.dual.option.funutils.ListFunHelp
 import com.pink.hami.melon.dual.option.utils.DualContext
 import com.google.gson.Gson
+import com.pink.hami.melon.dual.option.app.App
+import com.pink.hami.melon.dual.option.app.adload.GetAdData
 import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getDualImage
 import kotlinx.coroutines.launch
 
@@ -27,6 +29,7 @@ class ListActivity : BaseActivity<ActivityListBinding>(
             putExtra("key", "value")
         }
         setResult(Activity.RESULT_OK, data)
+        App.adManagerBack.loadAd()
     }
 
     private fun setupListeners() {

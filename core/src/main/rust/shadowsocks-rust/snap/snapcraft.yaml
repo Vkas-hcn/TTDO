@@ -4,7 +4,7 @@ summary: Rust port of Shadowsocks
 description: |
   Shadowsocks Client & Server, written in Rust.
 base: core18
-grade: stable
+neta: stable
 confinement: strict
 architectures: [amd64, arm64, armhf, i386, ppc64el]
 

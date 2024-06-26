@@ -1,5 +1,6 @@
 package com.pink.hami.melon.dual.option.funutils
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.VpnService
 import android.os.Bundle
@@ -8,6 +9,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
@@ -36,9 +38,11 @@ import com.pink.hami.melon.dual.option.utils.TimerManager
 import de.blinkt.openvpn.api.IOpenVPNAPIService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream
@@ -82,8 +86,6 @@ class MainFunHelp {
     }
 
 
-
-
     fun initData(activity: MainActivity, call: ShadowsocksConnection.Callback) {
         initializeActivityState(activity, call)
         DataStore.publicStore.registerChangeListener(activity)
@@ -99,7 +101,10 @@ class MainFunHelp {
         getSpeedData(activity)
     }
 
-    private fun initializeActivityState(activity: MainActivity, call: ShadowsocksConnection.Callback) {
+    private fun initializeActivityState(
+        activity: MainActivity,
+        call: ShadowsocksConnection.Callback
+    ) {
         changeState(BaseService.State.Idle, activity)
         connection.connect(activity, call)
     }
@@ -136,6 +141,7 @@ class MainFunHelp {
         updateLocalStorage(bestData)
         liveInitializeServerData.postValue(bestData)
     }
+
     private fun fetchSpeedData(activity: MainActivity) {
         val fileStorageManager = FileStorageManager(activity)
         activity.lifecycleScope.launch {
@@ -146,7 +152,10 @@ class MainFunHelp {
         }
     }
 
-    private suspend fun updateSpeedData(fileStorageManager: FileStorageManager, activity: MainActivity) {
+    private fun updateSpeedData(
+        fileStorageManager: FileStorageManager,
+        activity: MainActivity
+    ) {
         val appData = fileStorageManager.loadData()?.let { parseAppData(it) }
         activity.binding.tvDow.text = appData?.dual_sp_dow
         activity.binding.tvUp.text = appData?.dual_sp_up
@@ -155,17 +164,6 @@ class MainFunHelp {
     private fun parseAppData(json: String): AppData {
         return Gson().fromJson(json, AppData::class.java)
     }
-
-
-
-
-
-
-
-
-
-
-
 
 
     fun changeState(
@@ -206,7 +204,11 @@ class MainFunHelp {
         startVpn(activity)
     }
 
+    @SuppressLint("LogNotTimber")
     private fun startVpn(activity: AppCompatActivity) {
+
+        jobStartDual?.cancel()
+        jobStartDual = null
         jobStartDual = activity.lifecycleScope.launch {
             nowClickState = if (App.vpnLink) {
                 "2"
@@ -214,26 +216,50 @@ class MainFunHelp {
                 "0"
             }
             setTypeService(activity as MainActivity, 1)
-            ljVPn(activity)
+            if (App.adManagerConnect.canShowAd()==0) {
+                delay(1000)
+                ljVPn(activity)
+                return@launch
+            }
+            val startTime = System.currentTimeMillis()
+            var elapsedTime: Long
+            try {
+                while (isActive) {
+                    elapsedTime = System.currentTimeMillis() - startTime
+                    if (elapsedTime >= 10000L) {
+                        Log.e("TAG", "连接超时", )
+                        ljVPn(activity)
+                        break
+                    }
+
+                    if (elapsedTime >= 1000L && App.adManagerConnect.canShowAd() ==1) {
+                        App.adManagerConnect.showAd(activity) {
+                            ljVPn(activity)
+                        }
+                        break
+                    }
+                    delay(500L)
+                }
+            } catch (e: Exception) {
+                ljVPn(activity)
+            }
         }
     }
 
-    private suspend fun ljVPn(activity: MainActivity) {
+
+
+    private fun ljVPn(activity: MainActivity) {
         if (!App.vpnLink) {
-            activity.lifecycleScope.launch(Dispatchers.IO) {
-                if (activity.binding.agreement == "1") {
-                    mService?.let {
-                        setOpenData(activity, it)
-                    }
-                    Core.stopService()
-                } else {
-                    delay(2000)
-                    mService?.disconnect()
-                    Core.startService()
+            if (activity.binding.agreement == "1") {
+                mService?.let {
+                    setOpenData(activity, it)
                 }
+                Core.stopService()
+            } else {
+                mService?.disconnect()
+                Core.startService()
             }
         } else {
-            delay(2000)
             canChangingFun(activity, activity.binding.agreement == "1")
         }
     }
@@ -310,7 +336,7 @@ class MainFunHelp {
     ) {
         val binding = activity.binding
         binding.serviceState = stateInt
-        if(stateInt== 0){
+        if (stateInt == 0) {
             TimerManager.resetTimer()
             binding.llConnect.background =
                 activity.resources.getDrawable(R.drawable.bg_connect_op)
@@ -323,7 +349,7 @@ class MainFunHelp {
             binding.tvState.text = "Disconnected"
         }
 
-        if(stateInt== 1){
+        if (stateInt == 1) {
             binding.llConnect.background =
                 activity.resources.getDrawable(R.drawable.bg_connect_op_2)
             binding.lavConnect.visibility = View.VISIBLE
@@ -338,7 +364,7 @@ class MainFunHelp {
             }
         }
 
-        if(stateInt== 2){
+        if (stateInt == 2) {
             TimerManager.startTimer()
             binding.llConnect.background =
                 activity.resources.getDrawable(R.drawable.bg_connect_op_2)
@@ -350,7 +376,7 @@ class MainFunHelp {
             binding.imgLoading.visibility = View.INVISIBLE
             binding.tvState.text = "Connected"
         }
-        if(stateInt!=0 && stateInt!=1 && stateInt!=2){
+        if (stateInt != 0 && stateInt != 1 && stateInt != 2) {
             binding.imgConnect.setImageResource(R.drawable.ic_connect_1)
             binding.lavConnect.visibility = View.INVISIBLE
             binding.imgConnect.visibility = View.VISIBLE
@@ -359,7 +385,6 @@ class MainFunHelp {
             binding.imgLoading.visibility = View.INVISIBLE
         }
     }
-
 
 
     fun fetchBestData(): VpnServiceBean? {
@@ -444,7 +469,11 @@ class MainFunHelp {
         DualContext.localStorage.vpn_ip_dualLoad = data?.ip ?: ""
     }
 
-    private fun configureAndStartVPN(activity: MainActivity, server: IOpenVPNAPIService, data: VpnServiceBean?) {
+    private fun configureAndStartVPN(
+        activity: MainActivity,
+        server: IOpenVPNAPIService,
+        data: VpnServiceBean?
+    ) {
         runCatching {
             val config = buildVpnConfig(activity, data?.ip)
             Log.e(TAG, "step2: =$config")

@@ -48,12 +48,12 @@ object DualONlineFun {
                     params,
                     object : DualOnlineFac.Callback {
                         override fun onSuccess(response: String) {
-                            Log.d(TAG, "BlackData-Success: $response", )
+                            Log.d("TAG", "BlackData-Success: $response", )
                             DualContext.localStorage.local_clock = response
                         }
 
                         override fun onFailure(error: String) {
-                            Log.d(TAG, "BlackData-onFailure: $error", )
+                            Log.d("TAG", "BlackData-onFailure: $error", )
 
                             scheduleRetry(context)
                         }

@@ -100,7 +100,13 @@ object ListFunHelp {
 
 
     fun returnToHomePage(activity: ListActivity) {
-        activity.finish()
+        if (App.adManagerBack.hasAdDataForPosition()) {
+            App.adManagerBack.showAd(activity) {
+                activity.finish()
+            }
+        } else {
+            activity.finish()
+        }
     }
 
     private fun showDisconnectDialog(activity: AppCompatActivity) {

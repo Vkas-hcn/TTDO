@@ -1480,7 +1480,7 @@ close STDOUT or die "error closing STDOUT: $!;"
 # are required prior [variable] frame setup is completed, note that
 # nobody says that you can have only one "magic point." You can
 # "liberate" non-volatile registers by denoting last stack off-load
-# instruction and reflecting it in finer grade unwind logic in handler.
+# instruction and reflecting it in finer neta unwind logic in handler.
 # After all, isn't it why it's called *language-specific* handler...
 #
 # SE handlers are also involved in unwinding stack when executable is

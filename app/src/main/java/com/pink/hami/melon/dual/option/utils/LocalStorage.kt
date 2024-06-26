@@ -25,7 +25,16 @@ data class AppData(
 
     var dual_sp_dow: String = "",
     var dual_sp_up: String = "",
-)
+
+    var net1:Int = 0,
+    var net2:Int = 0,
+    var ad_date_app:Long = 0,
+    var online_ad_key: String = "",
+    var online_ref_key: String = "",
+    var online_control_key: String = "",
+    var online_control_key_core: Boolean = false,
+    var ref_data: String = "",
+    )
 
 class LocalStorage(private val context: Context) {
     private val fileStorageManager = FileStorageManager(context)
@@ -128,6 +137,59 @@ class LocalStorage(private val context: Context) {
             writeToFile(appData)
         }
 
+
+    var onlineAdBean : String
+        get() = appData.online_ad_key
+        set(value) {
+            appData.online_ad_key = value
+            writeToFile(appData)
+        }
+
+    var onlineRefBean: String
+        get() = appData.online_ref_key
+        set(value) {
+            appData.online_ref_key = value
+            writeToFile(appData)
+        }
+
+    var online_control_bean: String
+        get() = appData.online_control_key
+        set(value) {
+            appData.online_control_key = value
+            writeToFile(appData)
+        }
+    var online_control_bean_core: Boolean
+        get() = appData.online_control_key_core
+        set(value) {
+            appData.online_control_key_core = value
+            writeToFile(appData)
+        }
+
+    var ref_data: String
+        get() = appData.ref_data
+        set(value) {
+            appData.ref_data = value
+            writeToFile(appData)
+        }
+
+    var net1: Int
+        get() = appData.net1
+        set(value) {
+            appData.net1 = value
+            writeToFile(appData)
+        }
+    var net2: Int
+        get() = appData.net2
+        set(value) {
+            appData.net2 = value
+            writeToFile(appData)
+        }
+    var ad_date_app: Long
+        get() = appData.ad_date_app
+        set(value) {
+            appData.ad_date_app = value
+            writeToFile(appData)
+        }
     private fun writeToFile(data: AppData) {
         val dataString = gson.toJson(data)
         fileStorageManager.saveData(dataString)

@@ -20,8 +20,6 @@ class FileStorageManager(private val context: Context) {
         }
     }
     fun loadData(): String? {
-        Log.e("TAG", "loadData-main: ${context.filesDir}")
-
         return try {
             val file = File(context.filesDir, fileName)
             if (file.exists()) {

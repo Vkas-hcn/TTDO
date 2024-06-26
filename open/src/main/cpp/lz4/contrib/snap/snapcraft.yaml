@@ -19,7 +19,7 @@ description: >
     .
     LZ4 library is provided as open-source software using BSD 2-Clause license.
 confinement: strict
-grade: stable
+neta: stable
 
 apps:
   lz4:
