@@ -192,7 +192,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
             return
         }
 //        DualContext.localStorage.ref_data = "gclid"
-//        DualContext.localStorage.ref_data = "fb4a"
+        DualContext.localStorage.ref_data = "fb4a"
         runCatching {
             val referrerClient = InstallReferrerClient.newBuilder(context).build()
             referrerClient.startConnection(object : InstallReferrerStateListener {
@@ -202,7 +202,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
                             val installReferrer =
                                 referrerClient.installReferrer.installReferrer ?: ""
 
-                            DualContext.localStorage.ref_data= installReferrer
+//                            DualContext.localStorage.ref_data= installReferrer
 
                             Log.e(TAG, "onInstallReferrerSetupFinished: ${installReferrer}", )
                         }

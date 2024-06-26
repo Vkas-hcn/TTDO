@@ -2,6 +2,7 @@ package com.pink.hami.melon.dual.option.utils
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import com.pink.hami.melon.dual.option.BuildConfig
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.bean.DualFFFFFFBean
@@ -44,10 +45,14 @@ object DualContext {
     }
 
    suspend fun isHaveServeData(context: Context): Boolean {
-        return if (getAllVpnListData() == null) {
+       val allData = getAllVpnListData()
+        return if (allData == null) {
+            Log.e("TAG", "isHaveServeData1: ${Gson().toJson(allData)}", )
             fetchOnlineDataIfNecessary(context)
             false
         } else {
+            Log.e("TAG", "isHaveServeData2: ${Gson().toJson(allData)}", )
+
             val serviceData = Gson().fromJson<VpnServiceBean>(
                 localStorage.check_service,
                 object : TypeToken<VpnServiceBean?>() {}.type

@@ -10,7 +10,7 @@ data class AdBean(
 data class AdListBean(
     val net2: Int,
     val net1: Int,
-    val ad_back: MutableList<AdBean>,
+    val hury: MutableList<AdBean>,
     val bathe: MutableList<AdBean>,
     val mouth: MutableList<AdBean>,
     val cheap: MutableList<AdBean>,

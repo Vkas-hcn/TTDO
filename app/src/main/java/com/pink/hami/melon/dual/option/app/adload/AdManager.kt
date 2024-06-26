@@ -268,7 +268,7 @@ class AdManager private constructor(
             adList?.bathe?.filter { it.netu == adPosition.toString() }
                 ?.sortedByDescending { it.neta }
         } else {
-            adList?.ad_back?.filter { it.netu == adPosition.toString() }
+            adList?.hury?.filter { it.netu == adPosition.toString() }
                 ?.sortedByDescending { it.neta }
         }
         if (adBeans.isNullOrEmpty() || adIndex >= adBeans.size) {

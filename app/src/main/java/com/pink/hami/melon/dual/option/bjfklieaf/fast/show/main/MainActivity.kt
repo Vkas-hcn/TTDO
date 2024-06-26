@@ -12,6 +12,7 @@ import androidx.activity.addCallback
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceDataStore
@@ -266,11 +267,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
 
     override fun onResume() {
         super.onResume()
-        handleWarmBoot()
+        if (binding.imgOcAd.isVisible) {
+            App.adManagerHome.loadAd()
+        }
     }
 
-    private fun handleWarmBoot() {
-    }
 
     private fun handleDualTimerLock() {
         if (App.vpnLink) {
@@ -369,11 +370,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
             }
         }
     }
-    fun homeLoadAd(){
+
+    fun homeLoadAd() {
         App.adManagerConnect.loadAd()
         App.adManagerBack.loadAd()
         App.adManagerEnd.loadAd()
     }
+
     override fun openLifecycle(state: String?) {
         if (DualContext.localStorage.connection_mode != "1") {
             return
@@ -553,6 +556,5 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
             }
         }
     }
-
 
 }
