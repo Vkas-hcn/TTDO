@@ -195,12 +195,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
 //                    dialogHandler.showCannotUseDialog()
 //                    return@launch
 //                }
-                homeLoadAd()
-                if (binding.agreement == "1") {
-                    mainFun.startOpenVpn(this@MainActivity)
-                } else {
-                    connect.launch(null)
-                }
+                connect.launch(null)
             } else {
                 Toast.makeText(
                     this@MainActivity,
@@ -273,18 +268,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
     }
 
 
-    private fun handleDualTimerLock() {
-        if (App.vpnLink) {
-            binding.showGuide = false
-            mainFun.setTypeService(this, 2)
-            if (binding.tvTime.text.toString() == "00:00:00") {
-//                DualSjHelp.startTiming()
-            }
-        } else {
-            mainFun.setTypeService(this, 0)
-        }
-    }
-
     override fun onPause() {
         super.onPause()
     }
@@ -346,19 +329,40 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
 
 
     override fun stateChanged(state: BaseService.State, profileName: String?, msg: String?) {
-        App.vpnLink = state.canStop
-        mainFun.changeState(state, this)
+        if (state.name == "Connected") {
+            App.vpnLink = true
+            Log.e("TAG", "ss vpn连接成功")
+            if(mainFun.nowClickState !="1"){
+                mainFun.showConnectAd(this)
+            }
+            mainFun.setTypeService(this, 2)
+        }
+        if (state.name == "Stopped") {
+            App.vpnLink = false
+            Log.e("TAG", "ss vpn断开成功")
+            mainFun.setTypeService(this, 0)
+        }
     }
 
     override fun onServiceConnected(service: IShadowsocksService) {
         val state = BaseService.State.values()[service.state]
-        setSsVpnState(state.canStop)
+        Log.e("TAG", "ss-初始化: ${state.name}")
+        if (state.name == "Connected") {
+            setSsVpnState(true)
+        }
+        if (state.name == "Stopped") {
+            setSsVpnState(false)
+        }
     }
 
     private fun setSsVpnState(canStop: Boolean) {
         if (DualContext.localStorage.connection_mode != "1") {
             App.vpnLink = canStop
-            handleDualTimerLock()
+            if (App.vpnLink) {
+                mainFun.setTypeService(this, 2)
+            } else {
+                mainFun.setTypeService(this, 0)
+            }
         }
     }
 
@@ -371,11 +375,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
         }
     }
 
-    fun homeLoadAd() {
-        App.adManagerConnect.loadAd()
-        App.adManagerBack.loadAd()
-        App.adManagerEnd.loadAd()
-    }
 
     override fun openLifecycle(state: String?) {
         if (DualContext.localStorage.connection_mode != "1") {
@@ -384,12 +383,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
         when (state) {
             "CONNECTED" -> {
                 App.vpnLink = true
-                mainFun.canChangingFun(this@MainActivity, true)
-                mainFun.changeState(
-                    state = BaseService.State.Idle,
-                    this@MainActivity
-                )
-                handleDualTimerLock()
+                Log.e("TAG", "open vpn连接成功")
+                if(mainFun.nowClickState !="1"){
+                    mainFun.showConnectAd(this)
+                }
+                mainFun.setTypeService(this, 2)
             }
 
             "RECONNECTING", "EXITING", "CONNECTRETRY" -> {
@@ -397,11 +395,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
             }
 
             "NOPROCESS" -> {
+                Log.e("TAG", "open vpn断开成功")
                 mainFun.mService?.disconnect()
                 App.vpnLink = false
-                mainFun.canChangingFun(this@MainActivity, true)
-                mainFun.changeState(state = BaseService.State.Idle, this@MainActivity)
-                handleDualTimerLock()
+                mainFun.setTypeService(this, 0)
             }
         }
     }
@@ -455,6 +452,15 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
 
     override fun clickListenerInter() {
         binding.agreement = DualContext.localStorage.connection_mode.ifEmpty { "0" }
+        if(binding?.agreement!! == "0"){
+            mainInterface?.checkAgreementInter(AgreementStatus.Auto)
+        }
+        if(binding?.agreement!! == "1"){
+            mainInterface?.checkAgreementInter(AgreementStatus.SS)
+        }
+        if(binding?.agreement!! == "2"){
+            mainInterface?.checkAgreementInter(AgreementStatus.Open)
+        }
         if (App.isAppRunning) {
             binding.showGuide = false
         } else {

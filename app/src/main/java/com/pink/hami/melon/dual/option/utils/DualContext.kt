@@ -44,15 +44,12 @@ object DualContext {
         }
     }
 
-   suspend fun isHaveServeData(context: Context): Boolean {
+   fun isHaveServeData(context: Context): Boolean {
        val allData = getAllVpnListData()
         return if (allData == null) {
-            Log.e("TAG", "isHaveServeData1: ${Gson().toJson(allData)}", )
             fetchOnlineDataIfNecessary(context)
             false
         } else {
-            Log.e("TAG", "isHaveServeData2: ${Gson().toJson(allData)}", )
-
             val serviceData = Gson().fromJson<VpnServiceBean>(
                 localStorage.check_service,
                 object : TypeToken<VpnServiceBean?>() {}.type

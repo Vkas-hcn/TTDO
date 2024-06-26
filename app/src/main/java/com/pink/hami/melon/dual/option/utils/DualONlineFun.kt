@@ -7,7 +7,6 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import com.pink.hami.melon.dual.option.app.App
-import com.pink.hami.melon.dual.option.app.App.Companion.TAG
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -105,15 +104,15 @@ object DualONlineFun {
         try {
             smileNetManager.postPutData(DualContext.put_data_url, data, object : DualOnlineFac.Callback {
                 override fun onSuccess(response: String) {
-                    Log.e(TAG, "emitPointData--$name: onSuccess=$response")
+                    Log.e("TAG", "emitPointData--$name: onSuccess=$response")
                 }
 
                 override fun onFailure(error: String) {
-                    Log.e(TAG, "emitPointData--$name: onFailure=$error")
+                    Log.e("TAG", "emitPointData--$name: onFailure=$error")
                 }
             })
         } catch (e: Exception) {
-            Log.e(TAG, "emitPointData--$name: Exception=$e")
+            Log.e("TAG", "emitPointData--$name: Exception=$e")
         }
     }
 
@@ -123,12 +122,12 @@ object DualONlineFun {
         smileNetManager.getServiceData(DualContext.put_dualLoad_service_data_url, {
             val data = DulaShowDataUtils.dropReversed(it)
             DualContext.localStorage.vpn_online_data_dualLoad = data
-            Log.e(TAG, "landingRemoteData: success->$${DualContext.localStorage.vpn_online_data_dualLoad}")
+            Log.e("TAG", "landingRemoteData: success->$${DualContext.localStorage.vpn_online_data_dualLoad}")
             val timeEnd = ((System.currentTimeMillis() - timeStart) / 1000).toInt()
             emitPointData(context, "blom2t", "time", timeEnd)
             emitPointData(context, "blom2")
         }, {
-            Log.e(TAG, "landingRemoteData---error=: $it")
+            Log.e("TAG", "landingRemoteData---error=: $it")
         })
     }
 
@@ -139,7 +138,7 @@ object DualONlineFun {
             val content = inputStream.bufferedReader().use { it.readText() }
             onContentFetched(content)
         } catch (e: Exception) {
-            Log.e(TAG, "fetchIpFromUrl error: ${e.message}")
+            Log.e("TAG", "fetchIpFromUrl error: ${e.message}")
         }
     }
 

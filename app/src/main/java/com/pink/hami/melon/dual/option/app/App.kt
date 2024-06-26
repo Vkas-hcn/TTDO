@@ -37,7 +37,6 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
     var adActivity: Activity? = null
 
     companion object {
-        var TAG = "DualLoad"
         private lateinit var instance: App
         fun getAppContext() = instance
         var isBackDataDual = false
@@ -204,7 +203,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
 
 //                            DualContext.localStorage.ref_data= installReferrer
 
-                            Log.e(TAG, "onInstallReferrerSetupFinished: ${installReferrer}", )
+                            Log.e("TAG", "onInstallReferrerSetupFinished: ${installReferrer}", )
                         }
                     }
                     referrerClient.endConnection()

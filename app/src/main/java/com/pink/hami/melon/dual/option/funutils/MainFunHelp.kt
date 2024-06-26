@@ -15,7 +15,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.app.App
-import com.pink.hami.melon.dual.option.app.App.Companion.TAG
 import com.pink.hami.melon.dual.option.bean.VpnServiceBean
 import com.pink.hami.melon.dual.option.databinding.ActivityMainBinding
 import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.finish.FinishActivity
@@ -26,7 +25,6 @@ import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils
 import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getDualImage
 import com.github.shadowsocks.Core
 import com.github.shadowsocks.aidl.ShadowsocksConnection
-import com.github.shadowsocks.bg.BaseService
 import com.github.shadowsocks.database.Profile
 import com.github.shadowsocks.database.ProfileManager
 import com.github.shadowsocks.preference.DataStore
@@ -38,11 +36,9 @@ import com.pink.hami.melon.dual.option.utils.TimerManager
 import de.blinkt.openvpn.api.IOpenVPNAPIService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream
@@ -52,6 +48,7 @@ class MainFunHelp {
     val connection = ShadowsocksConnection(true)
     var whetherRefreshServer = false
     var jobStartDual: Job? = null
+    var jobConnectTTD: Job? = null
 
     val liveInitializeServerData: MutableLiveData<VpnServiceBean> by lazy {
         MutableLiveData<VpnServiceBean>()
@@ -77,13 +74,26 @@ class MainFunHelp {
         val fff = FileStorageManager(activity)
         activity.lifecycleScope.launch {
             while (isActive) {
-                val bean = Gson().fromJson(fff.loadData(), AppData::class.java)
-                activity.binding.tvDow.text = bean.dual_sp_dow
-                activity.binding.tvUp.text = bean.dual_sp_up
+                val data = fff.loadData()
+                val bean = if (data != null) {
+                    Gson().fromJson(data, AppData::class.java)
+                } else {
+                    null
+                }
+
+                if (bean != null) {
+                    activity.binding.tvDow.text = bean.dual_sp_dow ?: "0/kb"
+                    activity.binding.tvUp.text = bean.dual_sp_up ?: "0/kb"
+                } else {
+                    activity.binding.tvDow.text = "0/kb"
+                    activity.binding.tvUp.text = "0/kb"
+                }
+
                 delay(500)
             }
         }
     }
+
 
 
     fun initData(activity: MainActivity, call: ShadowsocksConnection.Callback) {
@@ -105,7 +115,6 @@ class MainFunHelp {
         activity: MainActivity,
         call: ShadowsocksConnection.Callback
     ) {
-        changeState(BaseService.State.Idle, activity)
         connection.connect(activity, call)
     }
 
@@ -166,14 +175,6 @@ class MainFunHelp {
     }
 
 
-    fun changeState(
-        state: BaseService.State = BaseService.State.Idle,
-        activity: MainActivity,
-    ) {
-        connectionStatusJudgment(activity)
-        MainActivity.stateListener?.invoke(state)
-    }
-
     fun papgeAtVpnServices(activity: MainActivity) {
         activity.lifecycleScope.launch {
             if (activity.lifecycle.currentState != Lifecycle.State.RESUMED) {
@@ -206,7 +207,6 @@ class MainFunHelp {
 
     @SuppressLint("LogNotTimber")
     private fun startVpn(activity: AppCompatActivity) {
-
         jobStartDual?.cancel()
         jobStartDual = null
         jobStartDual = activity.lifecycleScope.launch {
@@ -216,9 +216,33 @@ class MainFunHelp {
                 "0"
             }
             setTypeService(activity as MainActivity, 1)
-            if (App.adManagerConnect.canShowAd()==0) {
-                delay(1000)
+            delay(2000)
+            if(!isActive){
+                return@launch
+            }
+            if (App.vpnLink) {
+                showConnectAd(activity)
+            } else {
                 ljVPn(activity)
+            }
+        }
+    }
+
+    private fun showFinishAd(activity: MainActivity) {
+        if (nowClickState == "0") {
+            connectFinish(activity)
+        }
+        if (nowClickState == "2") {
+            disConnectFinish(activity)
+        }
+    }
+
+    fun showConnectAd(activity: MainActivity) {
+        jobConnectTTD?.cancel()
+        jobConnectTTD = null
+        jobConnectTTD = activity.lifecycleScope.launch {
+            if (App.adManagerConnect.canShowAd() == 0) {
+                showFinishAd(activity)
                 return@launch
             }
             val startTime = System.currentTimeMillis()
@@ -227,77 +251,56 @@ class MainFunHelp {
                 while (isActive) {
                     elapsedTime = System.currentTimeMillis() - startTime
                     if (elapsedTime >= 10000L) {
-                        Log.e("TAG", "连接超时", )
-                        ljVPn(activity)
+                        Log.e("TAG", "连接超时")
+                        showFinishAd(activity)
                         break
                     }
 
-                    if (elapsedTime >= 1000L && App.adManagerConnect.canShowAd() ==1) {
+                    if (App.adManagerConnect.canShowAd() == 1) {
                         App.adManagerConnect.showAd(activity) {
-                            ljVPn(activity)
+                            showFinishAd(activity)
                         }
                         break
                     }
                     delay(500L)
                 }
             } catch (e: Exception) {
-                ljVPn(activity)
+                showFinishAd(activity)
             }
         }
+        homeLoadAd()
     }
 
-
+    private fun homeLoadAd() {
+        App.adManagerConnect.loadAd()
+        App.adManagerBack.loadAd()
+        App.adManagerEnd.loadAd()
+    }
 
     private fun ljVPn(activity: MainActivity) {
-        if (!App.vpnLink) {
-            if (activity.binding.agreement == "1") {
-                mService?.let {
-                    setOpenData(activity, it)
-                }
-                Core.stopService()
-            } else {
-                mService?.disconnect()
-                Core.startService()
+        if (activity.binding.agreement == "1") {
+            mService?.let {
+                setOpenData(activity, it)
             }
-        } else {
-            canChangingFun(activity, activity.binding.agreement == "1")
-        }
-    }
-
-
-    fun dkVPn() {
-        if (App.vpnLink) {
             Core.stopService()
+        } else {
+            mService?.disconnect()
+            Core.startService()
         }
     }
 
-    fun canChangingFun(activity: MainActivity, isOpenJump: Boolean = false) {
-        if (nowClickState == "2") {
-            mService?.disconnect()
-            dkVPn()
-            setTypeService(activity, 0)
-            if (!App.isBackDataDual) {
-                pageToRePage(activity, false)
-            }
-        }
-        if (nowClickState == "0") {
-            if (!App.vpnLink) {
-                activity.lifecycleScope.launch(Dispatchers.Main) {
-                    Toast.makeText(activity, "The connection failed", Toast.LENGTH_SHORT).show()
-                }
-                return
-            }
-            if (!isOpenJump) {
-                if (activity.binding.agreement == "1") {
-                    return
-                }
-            }
-            if (!App.isBackDataDual) {
-                pageToRePage(activity, true)
-            }
-            setTypeService(activity, 2)
-        }
+    private fun connectFinish(activity: MainActivity) {
+        activity.binding.showGuide = false
+        setTypeService(activity, 2)
+        pageToRePage(activity, true)
+    }
 
+    private fun disConnectFinish(activity: MainActivity) {
+        Log.e("TAG", "关闭广告断开vpn: ")
+        mService?.disconnect()
+        Core.stopService()
+        setTypeService(activity, 0)
+        pageToRePage(activity, false)
     }
 
     private fun pageToRePage(activity: MainActivity, isConnect: Boolean) {
@@ -315,19 +318,6 @@ class MainFunHelp {
             }
             activity.finishPageLauncher.launch(intent)
         }
-    }
-
-    private fun connectionStatusJudgment(
-        activity: MainActivity
-    ) {
-        if (App.vpnLink) {
-            setTypeService(activity, 2)
-            canChangingFun(activity)
-        } else {
-            setTypeService(activity, 0)
-
-        }
-
     }
 
     fun setTypeService(
@@ -476,10 +466,8 @@ class MainFunHelp {
     ) {
         runCatching {
             val config = buildVpnConfig(activity, data?.ip)
-            Log.e(TAG, "step2: =$config")
             server.startVPN(config)
         }.onFailure { exception ->
-            Log.e(TAG, "Error in step2: ${exception.message}")
         }
     }
 
@@ -502,39 +490,23 @@ class MainFunHelp {
                 ).append("\n")
             }
         } catch (e: IOException) {
-            Log.e(TAG, "Error reading config file: ${e.message}")
+            Log.e("TAG", "Error reading config file: ${e.message}")
         } finally {
             try {
                 reader?.close()
             } catch (e: IOException) {
-                Log.e(TAG, "Error closing reader: ${e.message}")
+                Log.e("TAG", "Error closing reader: ${e.message}")
             }
             try {
                 inputStream?.close()
             } catch (e: IOException) {
-                Log.e(TAG, "Error closing inputStream: ${e.message}")
+                Log.e("TAG", "Error closing inputStream: ${e.message}")
             }
         }
 
         return config.toString()
     }
 
-    fun startOpenVpn(activity: MainActivity) {
-        val state = checkVPNPermission(activity)
-        if (state) {
-            startTheJudgment(activity)
-        } else {
-            VpnService.prepare(activity).let {
-                requestPermissionForResultVPN.launch(it)
-            }
-        }
-    }
-
-    fun checkVPNPermission(activity: MainActivity): Boolean {
-        VpnService.prepare(activity).let {
-            return it == null
-        }
-    }
 
     fun isConnectGuo(activity: MainActivity): Boolean {
         return !(nowClickState == "0" && activity.binding.serviceState == 1)
@@ -564,9 +536,13 @@ class MainFunHelp {
         connection.bandwidthTimeout = 0
         jobStartDual?.cancel()
         jobStartDual = null
+        jobConnectTTD?.cancel()
+        jobConnectTTD = null
         if (App.vpnLink) {
             setTypeService(activity, 2)
         } else {
+            mService?.disconnect()
+            Core.stopService()
             setTypeService(activity, 0)
         }
     }

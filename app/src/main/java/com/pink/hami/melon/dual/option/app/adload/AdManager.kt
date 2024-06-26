@@ -29,6 +29,7 @@ import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.finish.FinishActivity
 import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.main.MainActivity
 import com.pink.hami.melon.dual.option.utils.DualContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -125,16 +126,15 @@ class AdManager private constructor(
                     object : FullScreenContentCallback() {
                         override fun onAdDismissedFullScreenContent() {
                             onAdClosedCallback?.invoke()
+                        }
+
+                        override fun onAdShowedFullScreenContent() {
                             clearAd()
                             if (adPosition == GetAdData.AdWhere.CONNECT) {
                                 loadAd()
                             }
-                        }
-
-                        override fun onAdShowedFullScreenContent() {
                             incrementOpenCount()
                         }
-
                         override fun onAdClicked() {
                             incrementClickCount()
                         }

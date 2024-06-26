@@ -2,6 +2,7 @@ package com.pink.hami.melon.dual.option.app.adload
 
 import android.content.Context
 import android.graphics.Outline
+import android.util.Base64
 import android.view.View
 import android.view.ViewOutlineProvider
 import com.google.gson.Gson
@@ -27,12 +28,17 @@ object GetAdData {
         val localAdBean = getJsonDataFromAsset(App.getAppContext(), "ad.json")
         runCatching {
             if (onlineAdBean.isNotEmpty()) {
-                return Gson().fromJson(onlineAdBean, AdListBean::class.java)
+                return Gson().fromJson(base64Decode(onlineAdBean), AdListBean::class.java)
             } else {
-                return Gson().fromJson(localAdBean, AdListBean::class.java)
+                return Gson().fromJson(base64Decode(localAdBean!!), AdListBean::class.java)
             }
-        }.getOrNull() ?: return Gson().fromJson(localAdBean, AdListBean::class.java)
+        }.getOrNull() ?: return Gson().fromJson(base64Decode(localAdBean!!), AdListBean::class.java)
     }
+    //base64解密
+    fun base64Decode(base64Str: String): String {
+        return String(Base64.decode(base64Str, Base64.DEFAULT))
+    }
+
 
     fun getRefData(): AdRefBean {
         val onlineRefBean = DualContext.localStorage.onlineRefBean
