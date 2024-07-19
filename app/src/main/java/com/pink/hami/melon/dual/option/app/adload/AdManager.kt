@@ -465,6 +465,7 @@ class AdManager private constructor(
                     activity.binding.adLayoutAdmob.isVisible = true
                     incrementOpenCount()
                     clearAd()
+                    ad_H = DualONlineFun.afterLoadLinkSettingsTTD(ad_H)
                 }
             }
         }
@@ -495,6 +496,7 @@ class AdManager private constructor(
                     activity.binding.adLayoutAdmob.isVisible = true
                     incrementOpenCount()
                     clearAd()
+                    ad_E = DualONlineFun.afterLoadLinkSettingsTTD(ad_E)
                 }
             }
         }
