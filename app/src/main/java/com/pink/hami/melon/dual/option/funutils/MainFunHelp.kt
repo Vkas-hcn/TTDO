@@ -174,8 +174,12 @@ class MainFunHelp {
         }
     }
 
-    private fun parseAppData(json: String): AppData {
-        return Gson().fromJson(json, AppData::class.java)
+    private fun parseAppData(json: String): AppData? {
+        return try {
+            Gson().fromJson(json, AppData::class.java)
+        }catch (e:NullPointerException){
+            null
+        }
     }
 
 
