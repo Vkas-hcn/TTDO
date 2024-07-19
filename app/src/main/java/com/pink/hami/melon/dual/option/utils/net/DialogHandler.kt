@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.Color
 import androidx.appcompat.app.AlertDialog
+import com.pink.hami.melon.dual.option.utils.DualContext
+import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import kotlin.system.exitProcess
 
 class DialogHandler(private val context: Context) {
@@ -20,6 +22,10 @@ class DialogHandler(private val context: Context) {
         dialog.setCancelable(false)
         dialog.show()
         dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(Color.BLACK)
+        val ip = DualContext.localStorage.ip_gsd.ifEmpty {
+            DualContext.localStorage.ip_gsd_oth
+        }
+        DualONlineFun.emitPointData("v3proxy","gg",ip)
     }
 
     private fun exitApp() {

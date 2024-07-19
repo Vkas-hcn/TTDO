@@ -16,6 +16,8 @@ import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.app.adload.GetAdData
 import com.pink.hami.melon.dual.option.databinding.ActivityFinishBinding
 import com.pink.hami.melon.dual.option.funutils.FinishViewFun
+import com.pink.hami.melon.dual.option.utils.DualONlineFun
+import com.pink.hami.melon.dual.option.utils.PutDataUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -27,7 +29,7 @@ class FinishActivity : BaseActivity<ActivityFinishBinding>(
     private lateinit var vpnServiceBean: VpnServiceBean
     private var isConnect: Boolean = false
     private lateinit var connectionStatus: ConnectionStatus
-    private var jobEndTdo:Job? = null
+    private var jobEndTdo: Job? = null
     override fun initViewComponents() {
         extractBundleData()
         setupBackButton()
@@ -40,7 +42,9 @@ class FinishActivity : BaseActivity<ActivityFinishBinding>(
         App.adManagerBack.loadAd()
         App.adManagerEnd.loadAd()
         showHomeAd()
+        PutDataUtils.v12proxy(isConnect)
     }
+
     private fun showHomeAd() {
         jobEndTdo?.cancel()
         jobEndTdo = null
@@ -50,13 +54,13 @@ class FinishActivity : BaseActivity<ActivityFinishBinding>(
         jobEndTdo = lifecycleScope.launch {
             delay(300)
             while (isActive) {
-                if (App.adManagerEnd.canShowAd() ==0) {
+                if (App.adManagerEnd.canShowAd() == 0) {
                     jobEndTdo?.cancel()
                     jobEndTdo = null
                     binding.adLayout.isVisible = false
                     break
                 }
-                if (App.adManagerEnd.canShowAd() ==1) {
+                if (App.adManagerEnd.canShowAd() == 1) {
                     App.adManagerEnd.showAd(this@FinishActivity) {
                     }
                     jobEndTdo?.cancel()

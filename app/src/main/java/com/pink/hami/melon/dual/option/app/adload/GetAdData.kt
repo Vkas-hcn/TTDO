@@ -8,6 +8,7 @@ import android.view.ViewOutlineProvider
 import com.google.gson.Gson
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.utils.DualContext
+import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import com.pink.hami.melon.dual.option.utils.LocalStorage
 import java.io.IOException
 
@@ -21,7 +22,6 @@ object GetAdData {
     }
 
     const val ad_key = "oee"
-    const val ref_key = "mid"
     const val control_key = "pew"
     fun getAdData(): AdListBean {
         val onlineAdBean = DualContext.localStorage.onlineAdBean
@@ -34,23 +34,12 @@ object GetAdData {
             }
         }.getOrNull() ?: return Gson().fromJson(base64Decode(localAdBean!!), AdListBean::class.java)
     }
+
     //base64解密
     fun base64Decode(base64Str: String): String {
         return String(Base64.decode(base64Str, Base64.DEFAULT))
     }
 
-
-    fun getRefData(): AdRefBean {
-        val onlineRefBean = DualContext.localStorage.onlineRefBean
-        val localRefBean = getJsonDataFromAsset(App.getAppContext(), "ref.json")
-        runCatching {
-            if (onlineRefBean.isNotEmpty()) {
-                return Gson().fromJson(onlineRefBean, AdRefBean::class.java)
-            } else {
-                return Gson().fromJson(localRefBean, AdRefBean::class.java)
-            }
-        }.getOrNull() ?: return Gson().fromJson(localRefBean, AdRefBean::class.java)
-    }
 
     fun getControlData(): AdConBean {
         val onlineControlBean = DualContext.localStorage.online_control_bean
@@ -77,39 +66,6 @@ object GetAdData {
     }
 
 
-    private fun isFacebookUser(): Boolean {
-        val pattern = "fb4a|facebook".toRegex(RegexOption.IGNORE_CASE)
-        return (pattern.containsMatchIn(DualContext.localStorage.ref_data) && getRefData().opposite == "1")
-    }
-
-    fun isItABuyingUser(): Boolean {
-        return isFacebookUser()
-                || (getRefData().gadzooks == "1" && DualContext.localStorage.ref_data.contains(
-            "gclid",
-            true
-        ))
-                || (getRefData().scarcely == "1" && DualContext.localStorage.ref_data.contains(
-            "not%20set",
-            true
-        ))
-                || (getRefData().bludgeon == "1" && DualContext.localStorage.ref_data.contains(
-            "youtubeads",
-            true
-        ))
-                || (getRefData().standard == "1" && DualContext.localStorage.ref_data.contains(
-            "%7B%22",
-            true
-        ))
-                || (getRefData().chaplain == "1" && DualContext.localStorage.ref_data.contains(
-            "adjust",
-            true
-        ))
-                || (getRefData().inasmuch == "1" && DualContext.localStorage.ref_data.contains(
-            "bytedance",
-            true
-        ))
-    }
-
     fun raoliu(): Boolean {
         when (getControlData().tear) {
             "1" -> {
@@ -120,38 +76,20 @@ object GetAdData {
                 return false
             }
 
-            "3" -> {
-                return !isItABuyingUser()
-            }
-
             else -> {
                 return false
             }
         }
     }
-    fun refAdUsers(): Boolean {
-        when (getControlData().geez) {
-            "1" -> {
-                return true
-            }
 
-            "2" -> {
-                return isItABuyingUser()
-            }
-
-            "3" -> {
-                return false
-            }
-
-            else -> {
-                return true
-            }
-        }
-    }
     fun getAdBlackData(): Boolean {
         return when (getControlData().deer) {
             "1" -> {
-                DualContext.localStorage.local_clock == "psychic"
+                if (!DualContext.localStorage.locak_up) {
+                    DualONlineFun.emitPointData("v1proxy")
+                    DualContext.localStorage.locak_up = true
+                }
+                DualContext.localStorage.local_clock != "stringy"
             }
 
             "2" -> {
@@ -159,10 +97,11 @@ object GetAdData {
             }
 
             else -> {
-                false
+                true
             }
         }
     }
+
     class getAdC : ViewOutlineProvider() {
         override fun getOutline(view: View?, outline: Outline?) {
             val sView = view ?: return

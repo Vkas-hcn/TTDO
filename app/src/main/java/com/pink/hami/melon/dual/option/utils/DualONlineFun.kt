@@ -6,13 +6,23 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
+import com.adjust.sdk.Adjust
+import com.adjust.sdk.AdjustAdRevenue
+import com.adjust.sdk.AdjustConfig
+import com.android.installreferrer.api.ReferrerDetails
+import com.facebook.appevents.AppEventsLogger
+import com.google.android.gms.ads.AdValue
+import com.google.android.gms.ads.ResponseInfo
+import com.pink.hami.melon.dual.option.BuildConfig
 import com.pink.hami.melon.dual.option.app.App
+import com.pink.hami.melon.dual.option.app.adload.AdBean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URL
+import java.util.Currency
 
 object DualONlineFun {
     val smileNetManager = DualOnlineFac(App.getAppContext())
@@ -47,12 +57,12 @@ object DualONlineFun {
                     params,
                     object : DualOnlineFac.Callback {
                         override fun onSuccess(response: String) {
-                            Log.d("TAG", "BlackData-Success: $response", )
+                            Log.d("TAG", "BlackData-Success: $response")
                             DualContext.localStorage.local_clock = response
                         }
 
                         override fun onFailure(error: String) {
-                            Log.d("TAG", "BlackData-onFailure: $error", )
+                            Log.d("TAG", "BlackData-onFailure: $error")
 
                             scheduleRetry(context)
                         }
@@ -76,12 +86,7 @@ object DualONlineFun {
             "panic" to "com.tunix.vpn.proxymaster.fastvpn.bestvpn.freevpn",
             "brain" to "perigee",
             "academic" to getAppVersion(context).orEmpty(),
-            "tuft" to DualContext.localStorage.uuid_dualLoadile,
             "terse" to System.currentTimeMillis(),
-            "johnson" to Build.MODEL,
-            "walter" to Build.VERSION.RELEASE,
-            "hoagy" to DualContext.gidData,
-            "be" to Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
         )
     }
 
@@ -95,37 +100,49 @@ object DualONlineFun {
         }
     }
 
-    private fun emitPointData(context: Context, name: String, key: String? = null, time: Int = 0) {
+    fun emitPointData(
+        name: String,
+        key: String? = null,
+        keyValue: Any? = null,
+        key2: String? = null,
+        keyValue2: Any? = null
+    ) {
         val data = if (key != null) {
-            PutDataUtils.getTbaTimeDataJson(context, name, key, time)
+            PutDataUtils.getTbaTimeDataJson(name, key, keyValue, key2, keyValue2)
         } else {
-            PutDataUtils.getTbaDataJson(context, name)
+            PutDataUtils.getTbaDataJson(name)
         }
         try {
-            smileNetManager.postPutData(DualContext.put_data_url, data, object : DualOnlineFac.Callback {
-                override fun onSuccess(response: String) {
-                    Log.e("TAG", "emitPointData--$name: onSuccess=$response")
-                }
+            smileNetManager.postPutData(
+                DualContext.put_data_url,
+                data,
+                object : DualOnlineFac.Callback {
+                    override fun onSuccess(response: String) {
+                        Log.e("TAG", "emitPointData--$name: onSuccess=$response")
+                    }
 
-                override fun onFailure(error: String) {
-                    Log.e("TAG", "emitPointData--$name: onFailure=$error")
-                }
-            })
+                    override fun onFailure(error: String) {
+                        Log.e("TAG", "emitPointData--$name: onFailure=$error")
+                    }
+                })
         } catch (e: Exception) {
             Log.e("TAG", "emitPointData--$name: Exception=$e")
         }
     }
 
-    fun landingRemoteData(context: Context) {
+    fun landingRemoteData() {
         val timeStart = System.currentTimeMillis()
-        emitPointData(context, "blom1")
+        emitPointData("blom1")
         smileNetManager.getServiceData(DualContext.put_dualLoad_service_data_url, {
             val data = DulaShowDataUtils.dropReversed(it)
             DualContext.localStorage.vpn_online_data_dualLoad = data
-            Log.e("TAG", "landingRemoteData: success->$${DualContext.localStorage.vpn_online_data_dualLoad}")
+            Log.e(
+                "TAG",
+                "landingRemoteData: success->$${DualContext.localStorage.vpn_online_data_dualLoad}"
+            )
             val timeEnd = ((System.currentTimeMillis() - timeStart) / 1000).toInt()
-            emitPointData(context, "blom2t", "time", timeEnd)
-            emitPointData(context, "blom2")
+            emitPointData("blom2t", "time", timeEnd)
+            emitPointData("blom2")
         }, {
             Log.e("TAG", "landingRemoteData---error=: $it")
         })
@@ -148,5 +165,137 @@ object DualONlineFun {
 
     private fun extractCountryCodeFromJson(content: String): String {
         return content.split("\"country\":\"")[1].split("\"")[0]
+    }
+
+
+    fun emitInstallData(context: Context, referrerDetails: ReferrerDetails) {
+        if (DualContext.localStorage.up_install_thing) {
+            return
+        }
+        val json = PutDataUtils.install(context, referrerDetails)
+        Log.e("TBA", "json-install--->${json}")
+        try {
+            smileNetManager.postPutData(
+                DualContext.put_data_url,
+                json,
+                object : DualOnlineFac.Callback {
+                    override fun onSuccess(response: String) {
+                        Log.e("TAG", "install事件上报-成功->")
+                        DualContext.localStorage.up_install_thing = true
+                    }
+
+                    override fun onFailure(error: String) {
+                        Log.e("TAG", "install事件上报-失败=$error")
+                        DualContext.localStorage.up_install_thing = false
+
+                    }
+                })
+        } catch (e: Exception) {
+            Log.e("TAG", "install事件上报-失败=$e")
+
+        }
+    }
+
+    fun emitSessionData() {
+        val json = PutDataUtils.getSessionJson()
+        Log.e("TBA", "json-getSessionJson--->${json}")
+        try {
+            smileNetManager.postPutData(
+                DualContext.put_data_url,
+                json,
+                object : DualOnlineFac.Callback {
+                    override fun onSuccess(response: String) {
+                        Log.e("TAG", "Session事件上报-成功->")
+                    }
+
+                    override fun onFailure(error: String) {
+                        Log.e("TAG", "Session事件上报-失败=$error")
+
+                    }
+                })
+        } catch (e: Exception) {
+            Log.e("TAG", "Session事件上报-失败=$e")
+
+        }
+    }
+
+    fun emitAdData(
+        adValue: AdValue,
+        responseInfo: ResponseInfo,
+        adBean: AdBean?,
+        adType: String,
+        adKey: String,
+    ) {
+        val json = PutDataUtils.getAdJson(adValue, responseInfo, adBean, adType, adKey)
+        Log.e("TBA", "json-${adKey}-getADJson--->${json}")
+        try {
+            smileNetManager.postPutData(
+                DualContext.put_data_url,
+                json,
+                object : DualOnlineFac.Callback {
+                    override fun onSuccess(response: String) {
+                        Log.e("TAG", "${adKey}-广告事件上报-成功->")
+                    }
+
+                    override fun onFailure(error: String) {
+                        Log.e("TAG", "${adKey}-广告事件上报-失败=$error")
+
+                    }
+                })
+        } catch (e: Exception) {
+            Log.e("TAG", "S${adKey}-广告事件上报-失败=$e")
+        }
+    }
+
+
+    fun beforeLoadLinkSettingsTTD(ufDetailBean: AdBean?): AdBean? {
+        var data = false
+        if (App.vpnLink && !DualContext.localStorage.online_control_bean_core) {
+            ufDetailBean?.ttd_load_ip = DualContext.localStorage.vpn_ip_dualLoad
+            ufDetailBean?.ttd_load_city = DualContext.localStorage.vpn_city
+        } else {
+            data = true
+        }
+        if (data) {
+            ufDetailBean?.ttd_load_ip = DualContext.localStorage.ip_lo_dualLoad
+            ufDetailBean?.ttd_load_city = "null"
+        }
+        return ufDetailBean
+    }
+
+
+    fun afterLoadLinkSettingsTTD(ufDetailBean: AdBean?): AdBean? {
+        var data = false
+        if (App.vpnLink && !DualContext.localStorage.online_control_bean_core) {
+            ufDetailBean?.ttd_show_ip = DualContext.localStorage.vpn_ip_dualLoad
+            ufDetailBean?.ttd_show_city = DualContext.localStorage.vpn_city
+        } else {
+            data = true
+        }
+        if (data) {
+            ufDetailBean?.ttd_show_ip = DualContext.localStorage.ip_lo_dualLoad
+            ufDetailBean?.ttd_show_city = "null"
+        }
+        return ufDetailBean
+    }
+
+    fun toBuriedPointAdValueTTD(
+        adValue: AdValue,
+        responseInfo: ResponseInfo,
+    ) {
+        val adRevenue = AdjustAdRevenue(AdjustConfig.AD_REVENUE_ADMOB)
+        adRevenue.setRevenue(
+            adValue.valueMicros / 1000000.0,
+            adValue.currencyCode
+        )
+        adRevenue.setAdRevenueNetwork(responseInfo.mediationAdapterClassName)
+        Adjust.trackAdRevenue(adRevenue)
+        if (!BuildConfig.DEBUG) {
+            AppEventsLogger.newLogger(App.getAppContext()).logPurchase(
+                (adValue.valueMicros / 1000000.0).toBigDecimal(), Currency.getInstance("USD")
+            )
+        } else {
+            Log.d("TBA", "purchase打点--value=${adValue.valueMicros}")
+        }
     }
 }

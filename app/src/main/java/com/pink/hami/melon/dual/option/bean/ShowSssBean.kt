@@ -1,21 +1,22 @@
 package com.pink.hami.melon.dual.option.bean
 
+import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
 
-
+@Keep
 data class DualFFFFFFBean(
     val code: Int,
     val `data`: Data,
     val msg: String
 )
-
+@Keep
 data class Data(
     @SerializedName("CWywWBwl")
     val server_list: MutableList<VpnServiceBean>,
     @SerializedName("CEFWfua")
     val smart_list: MutableList<VpnServiceBean>
 )
-
+@Keep
 data class VpnServiceBean(
     @SerializedName("PVTzJURHO")
     var city: String = "",

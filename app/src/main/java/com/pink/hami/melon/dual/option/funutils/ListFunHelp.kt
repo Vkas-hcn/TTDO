@@ -12,6 +12,7 @@ import com.pink.hami.melon.dual.option.utils.DualContext
 import com.google.gson.Gson
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.list.VerticalSpaceItemDecoration
+import com.pink.hami.melon.dual.option.utils.DualONlineFun
 
 object ListFunHelp {
     lateinit var allVpnListData: MutableList<VpnServiceBean>
@@ -100,6 +101,7 @@ object ListFunHelp {
 
 
     fun returnToHomePage(activity: ListActivity) {
+        DualONlineFun.emitPointData("v20proxy")
         if (App.adManagerBack.hasAdDataForPosition()) {
             App.adManagerBack.showAd(activity) {
                 activity.finish()

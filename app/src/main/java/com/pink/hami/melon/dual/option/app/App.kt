@@ -1,5 +1,6 @@
 package com.pink.hami.melon.dual.option.app
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityManager
 import android.app.Application
@@ -8,8 +9,11 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.Process
+import android.provider.Settings
 import android.util.Log
 import android.webkit.WebView
+import com.adjust.sdk.Adjust
+import com.adjust.sdk.AdjustConfig
 import com.android.installreferrer.api.InstallReferrerClient
 import com.android.installreferrer.api.InstallReferrerStateListener
 import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.first.FirstActivity
@@ -23,6 +27,8 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.pink.hami.melon.dual.option.app.adload.AdManager
 import com.pink.hami.melon.dual.option.app.adload.GetAdData
+import com.pink.hami.melon.dual.option.utils.DualONlineFun
+import com.pink.hami.melon.dual.option.utils.LocalStorage
 import de.blinkt.openvpn.OPenSpUtils
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancel
@@ -49,6 +55,8 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         lateinit var adManagerEnd: AdManager
         lateinit var adManagerConnect: AdManager
         lateinit var adManagerBack: AdManager
+        var top_activity_name: String? = null
+
     }
 
     override fun onCreate() {
@@ -73,7 +81,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
                         WebView.setDataDirectorySuffix(getProcessName())
                     }
                 }
-                haveRefDataChanging(this)
+                initAdJust(this)
                 adManagerOpen = AdManager.getInstance(this, GetAdData.AdWhere.GUIDE)
                 adManagerHome = AdManager.getInstance(this, GetAdData.AdWhere.HOME)
                 adManagerEnd = AdManager.getInstance(this, GetAdData.AdWhere.END)
@@ -82,8 +90,6 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
             }
         }
     }
-
-
     private fun isMainProcess(context: Context): Boolean {
         val pid = Process.myPid()
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -106,6 +112,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
             if (data.isEmpty()) {
                 DualContext.localStorage.uuid_dualLoadile = UUID.randomUUID().toString()
             }
+            haveRefDataChangingBean(this)
         }
     }
 
@@ -116,6 +123,8 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
     override fun onActivityStarted(activity: Activity) {
         if (activity is AdActivity) {
             adActivity = activity
+        }else{
+            top_activity_name = activity.javaClass.simpleName
         }
     }
 
@@ -128,10 +137,11 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
                 restartApp(activity)
             }
         }
+        Adjust.onResume()
     }
 
     override fun onActivityPaused(activity: Activity) {
-
+        Adjust.onPause()
     }
 
     override fun onActivityStopped(activity: Activity) {
@@ -173,25 +183,10 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         activity.finish()
     }
 
-    private fun haveRefDataChanging(context: Context) {
-        GlobalScope.launch {
-            while (isActive) {
-                if (DualContext.localStorage.ref_data.isEmpty()) {
-                    haveRefDataChangingBean(context)
-                } else {
-                    cancel()
-                }
-                delay(6000)
-            }
-        }
-    }
+
 
     private fun haveRefDataChangingBean(context: Context) {
-        if (DualContext.localStorage.ref_data.isNotBlank()) {
-            return
-        }
-//        DualContext.localStorage.ref_data = "gclid"
-        DualContext.localStorage.ref_data = "fb4a"
+
         runCatching {
             val referrerClient = InstallReferrerClient.newBuilder(context).build()
             referrerClient.startConnection(object : InstallReferrerStateListener {
@@ -200,10 +195,11 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
                         InstallReferrerClient.InstallReferrerResponse.OK -> {
                             val installReferrer =
                                 referrerClient.installReferrer.installReferrer ?: ""
-
-//                            DualContext.localStorage.ref_data= installReferrer
-
-                            Log.e("TAG", "onInstallReferrerSetupFinished: ${installReferrer}", )
+                                runCatching {
+                                    referrerClient?.installReferrer?.run {
+                                        DualONlineFun.emitInstallData(context, this)
+                                    }
+                                }.exceptionOrNull()
                         }
                     }
                     referrerClient.endConnection()
@@ -214,5 +210,27 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
             })
         }.onFailure { e ->
         }
+    }
+    @SuppressLint("HardwareIds")
+    private fun initAdJust(application: Application) {
+        Adjust.addSessionCallbackParameter(
+            "customer_user_id",
+            Settings.Secure.getString(application.contentResolver, Settings.Secure.ANDROID_ID)
+        )
+        val appToken = "ih2pm2dr3k74"
+        val environment: String = AdjustConfig.ENVIRONMENT_SANDBOX
+        val config = AdjustConfig(application, appToken, environment)
+        config.needsCost = true
+        config.setOnAttributionChangedListener { attribution ->
+            Log.e("TAG", "adjust=${attribution}")
+            if (!DualContext.localStorage.adjustValue && attribution.network.isNotEmpty() && attribution.network.contains(
+                    "organic",
+                    true
+                ).not()
+            ) {
+                DualContext.localStorage.adjustValue = true
+            }
+        }
+        Adjust.onCreate(config)
     }
 }

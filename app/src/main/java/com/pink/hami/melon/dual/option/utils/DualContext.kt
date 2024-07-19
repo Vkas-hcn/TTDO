@@ -30,9 +30,9 @@ object DualContext {
 
     private fun initializePutDataUrl(): String {
         return if (BuildConfig.DEBUG) {
-            "https://test-hydrant.writeonlinepennetproxy.com/crupper/bravado/cagey"
+            "https://test-dynamo.writeonlinepennetproxy.com/charley/conifer"
         } else {
-            "https://hydrant.writeonlinepennetproxy.com/tuff/senile"
+            "https://dynamo.writeonlinepennetproxy.com/chisel/steamy/hothouse"
         }
     }
 
@@ -44,10 +44,10 @@ object DualContext {
         }
     }
 
-   fun isHaveServeData(context: Context): Boolean {
+   fun isHaveServeData(): Boolean {
        val allData = getAllVpnListData()
         return if (allData == null) {
-            fetchOnlineDataIfNecessary(context)
+            fetchOnlineDataIfNecessary()
             false
         } else {
             val serviceData = Gson().fromJson<VpnServiceBean>(
@@ -64,8 +64,8 @@ object DualContext {
         }
     }
 
-    private fun fetchOnlineDataIfNecessary(context: Context) {
-        landingRemoteData(context)
+    private fun fetchOnlineDataIfNecessary() {
+        landingRemoteData()
     }
 
     fun getAllVpnListData(): MutableList<VpnServiceBean>? {

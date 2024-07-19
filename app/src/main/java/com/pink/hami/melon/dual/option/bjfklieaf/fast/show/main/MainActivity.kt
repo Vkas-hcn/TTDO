@@ -40,6 +40,7 @@ import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.app.adload.GetAdData
 import com.pink.hami.melon.dual.option.databinding.ActivityMainBinding
 import com.pink.hami.melon.dual.option.funutils.MainFunHelp
+import com.pink.hami.melon.dual.option.utils.PutDataUtils
 import com.pink.hami.melon.dual.option.utils.TimerObservers
 import com.pink.hami.melon.dual.option.utils.net.DialogHandler
 import com.pink.hami.melon.dual.option.utils.net.IpChecker
@@ -156,6 +157,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
                     dialog.dismiss()
                     toConnectVpn()
                     binding.agreement = type
+                    DualONlineFun.emitPointData("v19proxy")
                 }
                 .setNegativeButton("Cancel") { dialog, _ ->
                     dialog.dismiss()
@@ -179,8 +181,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
 
     private fun toConnectVpn() {
         lifecycleScope.launch {
+            DualONlineFun.emitPointData("v6proxy")
             binding.showGuide = false
-            if (!DualContext.isHaveServeData(this@MainActivity)) {
+            if (!DualContext.isHaveServeData()) {
                 binding.pbLoading.visibility = View.VISIBLE
                 delay(2000)
                 binding.pbLoading.visibility = View.GONE
@@ -195,6 +198,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
 //                    dialogHandler.showCannotUseDialog()
 //                    return@launch
 //                }
+                if (!DualContext.localStorage.vpn_per_up) {
+                    DualContext.localStorage.vpn_per_up = true
+                    DualONlineFun.emitPointData("v7proxy")
+                }
                 connect.launch(null)
             } else {
                 Toast.makeText(
@@ -212,13 +219,21 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
             Toast.makeText(this, "No permission", Toast.LENGTH_SHORT).show()
         } else {
             mainFun.startTheJudgment(this)
+            upDataVpnPerUp()
         }
     }
 
+    private fun upDataVpnPerUp() {
+        if (!DualContext.localStorage.vpn_per_up2) {
+            DualContext.localStorage.vpn_per_up2 = true
+            DualONlineFun.emitPointData("v8proxy")
+        }
+    }
 
     private fun requestPermissionForResult(result: ActivityResult) {
         if (result.resultCode == RESULT_OK) {
             mainFun.startTheJudgment(this)
+            upDataVpnPerUp()
         } else {
             Toast.makeText(this, "No permission", Toast.LENGTH_SHORT).show()
         }
@@ -332,10 +347,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
         if (state.name == "Connected") {
             App.vpnLink = true
             Log.e("TAG", "ss vpn连接成功")
-            if(mainFun.nowClickState !="1"){
+            if (mainFun.nowClickState != "1") {
                 mainFun.showConnectAd(this)
             }
             mainFun.setTypeService(this, 2)
+            PutDataUtils.v10proxy()
         }
         if (state.name == "Stopped") {
             App.vpnLink = false
@@ -380,18 +396,21 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
         if (DualContext.localStorage.connection_mode != "1") {
             return
         }
+        Log.e("TAG", "openLifecycle: ${state}", )
         when (state) {
             "CONNECTED" -> {
                 App.vpnLink = true
                 Log.e("TAG", "open vpn连接成功")
-                if(mainFun.nowClickState !="1"){
+                if (mainFun.nowClickState != "1") {
                     mainFun.showConnectAd(this)
                 }
                 mainFun.setTypeService(this, 2)
+                PutDataUtils.v10proxy()
             }
 
             "RECONNECTING", "EXITING", "CONNECTRETRY" -> {
                 mainFun.mService?.disconnect()
+                DualONlineFun.emitPointData("v11proxy")
             }
 
             "NOPROCESS" -> {
@@ -452,13 +471,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
 
     override fun clickListenerInter() {
         binding.agreement = DualContext.localStorage.connection_mode.ifEmpty { "0" }
-        if(binding?.agreement!! == "0"){
+        if (binding?.agreement!! == "0") {
             mainInterface?.checkAgreementInter(AgreementStatus.Auto)
         }
-        if(binding?.agreement!! == "1"){
+        if (binding?.agreement!! == "1") {
             mainInterface?.checkAgreementInter(AgreementStatus.SS)
         }
-        if(binding?.agreement!! == "2"){
+        if (binding?.agreement!! == "2") {
             mainInterface?.checkAgreementInter(AgreementStatus.Open)
         }
         if (App.isAppRunning) {
@@ -468,7 +487,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
             App.isAppRunning = true
         }
         binding.llSetting.setOnClickListener {
-            Core.startService()
         }
         binding.imgConnect.setOnClickListener {
             toClickConnect()

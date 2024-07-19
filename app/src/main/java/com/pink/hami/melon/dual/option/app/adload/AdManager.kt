@@ -25,9 +25,13 @@ import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdView
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.app.App
+import com.pink.hami.melon.dual.option.base.BaseActivity
 import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.finish.FinishActivity
+import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.list.ListActivity
 import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.main.MainActivity
 import com.pink.hami.melon.dual.option.utils.DualContext
+import com.pink.hami.melon.dual.option.utils.DualONlineFun
+import com.pink.hami.melon.dual.option.utils.PutDataUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -46,6 +50,11 @@ class AdManager private constructor(
     private var onAdClosedCallback: (() -> Unit)? = null
     private var isAdLoading: Boolean = false
     private var isOneOpenLoad = false
+    var ad_O: AdBean? = null
+    var ad_H: AdBean? = null
+    var ad_E: AdBean? = null
+    var ad_C: AdBean? = null
+    var ad_B: AdBean? = null
 
     init {
         MobileAds.initialize(application) {}
@@ -76,13 +85,8 @@ class AdManager private constructor(
         }
         if (isAdAvailable()) return
 
-        val userData = GetAdData.refAdUsers()
         val blackData = GetAdData.getAdBlackData()
-        if (!userData && (adPosition == GetAdData.AdWhere.HOME || adPosition == GetAdData.AdWhere.CONNECT || adPosition == GetAdData.AdWhere.BACK)) {
-            Log.e("TAG", "买量屏蔽${adPosition}广告")
-            return
-        }
-        if (blackData && (adPosition == GetAdData.AdWhere.CONNECT || adPosition == GetAdData.AdWhere.BACK)) {
+        if (blackData && (adPosition == GetAdData.AdWhere.HOME || adPosition == GetAdData.AdWhere.CONNECT || adPosition == GetAdData.AdWhere.BACK)) {
             Log.e("TAG", "黑名单屏蔽${adPosition}广告")
             return
         }
@@ -96,7 +100,7 @@ class AdManager private constructor(
         }
     }
 
-    fun showAd(activity: Activity, onAdClosedCallback: (() -> Unit)? = null) {
+    fun showAd(activity: AppCompatActivity, onAdClosedCallback: (() -> Unit)? = null) {
         this.onAdClosedCallback = onAdClosedCallback
         Log.e("TAG", "${adPosition}-广告位是否是前台-${isAppInForeground}")
         if (!isAppInForeground) return
@@ -119,6 +123,7 @@ class AdManager private constructor(
                     }
                 }
                 (ad as AppOpenAd).show(activity)
+                ad_O = DualONlineFun.afterLoadLinkSettingsTTD(ad_O)
             }
 
             is InterstitialAd -> {
@@ -135,11 +140,36 @@ class AdManager private constructor(
                             }
                             incrementOpenCount()
                         }
+
                         override fun onAdClicked() {
                             incrementClickCount()
                         }
                     }
-                (ad as InterstitialAd).show(activity)
+                activity.lifecycleScope.launch {
+                    if (adPosition == GetAdData.AdWhere.CONNECT) {
+                        (activity as MainActivity).binding.dataLoading = true
+                        delay(1000)
+                        activity.binding.dataLoading = false
+                    }
+                    if (adPosition == GetAdData.AdWhere.BACK) {
+                        if (activity is FinishActivity) {
+                            activity.binding.dataLoading = true
+                            delay(1000)
+                            activity.binding.dataLoading = false
+                        }
+                        if (activity is ListActivity) {
+                            activity.binding.dataLoading = true
+                            delay(1000)
+                            activity.binding.dataLoading = false
+                        }
+                    }
+                    (ad as InterstitialAd).show(activity)
+                    if (adPosition == GetAdData.AdWhere.CONNECT) {
+                        ad_C = DualONlineFun.afterLoadLinkSettingsTTD(ad_C)
+                    } else {
+                        ad_B = DualONlineFun.afterLoadLinkSettingsTTD(ad_B)
+                    }
+                }
             }
 
             is NativeAd -> {
@@ -153,12 +183,8 @@ class AdManager private constructor(
     }
 
     fun canShowAd(): Int {
-        val userData = GetAdData.refAdUsers()
         val blackData = GetAdData.getAdBlackData()
-        if (!userData && (adPosition == GetAdData.AdWhere.HOME || adPosition == GetAdData.AdWhere.CONNECT || adPosition == GetAdData.AdWhere.BACK)) {
-            return 0
-        }
-        if (blackData && (adPosition == GetAdData.AdWhere.CONNECT || adPosition == GetAdData.AdWhere.BACK)) {
+        if (blackData && (adPosition == GetAdData.AdWhere.HOME || adPosition == GetAdData.AdWhere.CONNECT || adPosition == GetAdData.AdWhere.BACK)) {
             onAdClosedCallback?.invoke()
             return 0
         }
@@ -190,6 +216,9 @@ class AdManager private constructor(
     private fun clearAd() {
         ad = null
         isAdLoading = false
+    }
+     fun isHaveAdData():Boolean {
+      return  ad != null
     }
 
     private fun canLoadAd(): Boolean {
@@ -241,6 +270,8 @@ class AdManager private constructor(
         }
         val adBean = adBeans[adIndex]
         val request = AdRequest.Builder().build()
+        ad_O = DualONlineFun.beforeLoadLinkSettingsTTD(adBean)
+        PutDataUtils.v14proxy(adBean)
         Log.e("TAG", "${adPosition}广告-开始加载;neta=${adBean.neta};id=${adBean.netw}")
         AppOpenAd.load(
             application,
@@ -253,12 +284,24 @@ class AdManager private constructor(
                     ad = loadedAd
                     lastLoadTime = Calendar.getInstance().timeInMillis
                     isAdLoading = false
+                    PutDataUtils.v15proxy(adBean)
+                    loadedAd.setOnPaidEventListener { adValue ->
+                        Log.e("TAG", "App open ads start reporting")
+                        adValue.let {
+                            DualONlineFun.emitAdData(
+                                adValue,
+                                loadedAd.responseInfo, ad_O, "open", "sadly"
+                            )
+                        }
+                        DualONlineFun.toBuriedPointAdValueTTD(adValue,loadedAd.responseInfo)
+                    }
                 }
 
                 override fun onAdFailedToLoad(loadAdError: LoadAdError) {
                     Log.e("TAG", "${adPosition}广告-加载失败:${loadAdError}")
                     adIndex++
                     loadAppOpenAd()
+                    PutDataUtils.v17proxy(adBean,loadAdError.toString())
                 }
             })
     }
@@ -277,6 +320,12 @@ class AdManager private constructor(
         }
         Log.e("TAG", "${adPosition}广告-开始加载")
         val adBean = adBeans[adIndex]
+        PutDataUtils.v14proxy(adBean)
+        if (adPosition == GetAdData.AdWhere.CONNECT) {
+            ad_C = DualONlineFun.beforeLoadLinkSettingsTTD(adBean)
+        } else {
+            ad_B = DualONlineFun.beforeLoadLinkSettingsTTD(adBean)
+        }
         val request = AdRequest.Builder().build()
         InterstitialAd.load(
             application,
@@ -288,12 +337,32 @@ class AdManager private constructor(
                     ad = loadedAd
                     lastLoadTime = Calendar.getInstance().timeInMillis
                     isAdLoading = false
+                    PutDataUtils.v15proxy(adBean)
+                    loadedAd.setOnPaidEventListener { adValue ->
+                        loadedAd.responseInfo.let { it1 ->
+                            Log.e("TBA", "${adPosition}广告开始上报")
+                            if (adPosition == GetAdData.AdWhere.CONNECT) {
+                                DualONlineFun.emitAdData(
+                                    adValue,
+                                    it1, ad_C, "native", "bathe"
+                                )
+                            } else {
+                                DualONlineFun.emitAdData(
+                                    adValue,
+                                    it1, ad_B, "native", "hury"
+                                )
+                            }
+                        }
+                        DualONlineFun.toBuriedPointAdValueTTD(adValue,loadedAd.responseInfo)
+                        loadAd()
+                    }
                 }
 
                 override fun onAdFailedToLoad(loadAdError: LoadAdError) {
                     Log.e("TAG", "${adPosition}广告加载失败:${loadAdError}")
                     adIndex++
                     loadInterstitialAd()
+                    PutDataUtils.v17proxy(adBean,loadAdError.toString())
                 }
             })
     }
@@ -312,21 +381,47 @@ class AdManager private constructor(
         }
         Log.e("TAG", "${adPosition}广告-开始加载")
         val adBean = adBeans[adIndex]
+        PutDataUtils.v14proxy(adBean)
+        if (adPosition == GetAdData.AdWhere.HOME) {
+            ad_H = DualONlineFun.beforeLoadLinkSettingsTTD(adBean)
+        } else {
+            ad_E = DualONlineFun.beforeLoadLinkSettingsTTD(adBean)
+        }
         val adLoader = AdLoader.Builder(application, adBean.netw)
             .forNativeAd { unifiedNativeAd ->
                 Log.e("TAG", "${adPosition}广告加载成功")
                 ad = unifiedNativeAd
                 lastLoadTime = Calendar.getInstance().timeInMillis
                 isAdLoading = false
-                unifiedNativeAd.setOnPaidEventListener {
+                PutDataUtils.v15proxy(adBean)
+                unifiedNativeAd.setOnPaidEventListener { adValue ->
+                    unifiedNativeAd.responseInfo?.let { it1 ->
+                        Log.e("TBA", "result广告开始上报")
+                        if (adPosition == GetAdData.AdWhere.HOME) {
+                            DualONlineFun.emitAdData(
+                                adValue,
+                                it1, ad_H, "native", "cheap"
+                            )
+                        } else {
+                            DualONlineFun.emitAdData(
+                                adValue,
+                                it1, ad_E, "native", "mouth"
+                            )
+                        }
+                        DualONlineFun.toBuriedPointAdValueTTD(adValue,
+                            it1
+                        )
+                    }
                     loadAd()
                 }
+
             }
             .withAdListener(object : com.google.android.gms.ads.AdListener() {
                 override fun onAdFailedToLoad(loadAdError: LoadAdError) {
                     Log.e("TAG", "${adPosition}广告加载失败:${loadAdError}")
                     adIndex++
                     loadNativeAd()
+                    PutDataUtils.v17proxy(adBean,loadAdError.toString())
                 }
 
                 override fun onAdClicked() {
@@ -345,8 +440,8 @@ class AdManager private constructor(
                 val state = activity.lifecycle.currentState == Lifecycle.State.RESUMED
 
                 if (state) {
-                    val userData = GetAdData.refAdUsers()
-                    if (!userData) {
+                    val blackData = GetAdData.getAdBlackData()
+                    if (blackData) {
                         activity.binding.adLayout.isVisible = false
                         Log.e("TAG", "买量屏蔽Home广告")
                         return@let
@@ -406,7 +501,6 @@ class AdManager private constructor(
     }
 
     private fun populateNativeAdView(nativeAd: NativeAd, adView: NativeAdView) {
-        // Bind the native ad data to the ad view
         adView.headlineView = adView.findViewById(R.id.ad_headline)
         adView.bodyView = adView.findViewById(R.id.ad_body)
         adView.callToActionView = adView.findViewById(R.id.ad_call_to_action)

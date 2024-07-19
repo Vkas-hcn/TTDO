@@ -31,6 +31,7 @@ import com.github.shadowsocks.preference.DataStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.pink.hami.melon.dual.option.utils.AppData
+import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import com.pink.hami.melon.dual.option.utils.FileStorageManager
 import com.pink.hami.melon.dual.option.utils.TimerManager
 import de.blinkt.openvpn.api.IOpenVPNAPIService
@@ -181,7 +182,7 @@ class MainFunHelp {
                 return@launch
             }
             activity.binding.pbLoading.visibility = View.VISIBLE
-            if (!DualContext.isHaveServeData(activity)) {
+            if (!DualContext.isHaveServeData()) {
                 delay(2000)
             }
             activity.binding.pbLoading.visibility = View.INVISIBLE
@@ -278,6 +279,7 @@ class MainFunHelp {
     }
 
     private fun ljVPn(activity: MainActivity) {
+        DualONlineFun.emitPointData("v9proxy")
         if (activity.binding.agreement == "1") {
             mService?.let {
                 setOpenData(activity, it)

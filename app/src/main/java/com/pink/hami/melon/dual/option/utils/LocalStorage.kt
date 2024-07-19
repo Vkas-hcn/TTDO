@@ -18,6 +18,7 @@ data class AppData(
     var vpn_city: String = "",
     var connection_mode: String = "",
     var local_clock: String = "",
+    var locak_up: Boolean = false,
     var ip_lo_dualLoad: String = "",
     var ip_gsd: String = "",
     var ip_gsd_oth: String = "",
@@ -26,15 +27,21 @@ data class AppData(
     var dual_sp_dow: String = "",
     var dual_sp_up: String = "",
 
-    var net1:Int = 0,
-    var net2:Int = 0,
-    var ad_date_app:Long = 0,
+    var net1: Int = 0,
+    var net2: Int = 0,
+    var ad_date_app: Long = 0,
     var online_ad_key: String = "",
     var online_ref_key: String = "",
     var online_control_key: String = "",
     var online_control_key_core: Boolean = false,
     var ref_data: String = "",
-    )
+    var up_install_thing: Boolean = false,
+
+    var vpn_per_up: Boolean = false,
+    var vpn_per_up2: Boolean = false,
+    var cmpType: Boolean = false,
+    var adjustValue:Boolean = false,
+)
 
 class LocalStorage(private val context: Context) {
     private val fileStorageManager = FileStorageManager(context)
@@ -97,6 +104,12 @@ class LocalStorage(private val context: Context) {
             appData.local_clock = value
             writeToFile(appData)
         }
+    var locak_up: Boolean
+        get() = appData.locak_up
+        set(value) {
+            appData.locak_up = value
+            writeToFile(appData)
+        }
     var ip_lo_dualLoad: String
         get() = appData.ip_lo_dualLoad
         set(value) {
@@ -138,19 +151,13 @@ class LocalStorage(private val context: Context) {
         }
 
 
-    var onlineAdBean : String
+    var onlineAdBean: String
         get() = appData.online_ad_key
         set(value) {
             appData.online_ad_key = value
             writeToFile(appData)
         }
 
-    var onlineRefBean: String
-        get() = appData.online_ref_key
-        set(value) {
-            appData.online_ref_key = value
-            writeToFile(appData)
-        }
 
     var online_control_bean: String
         get() = appData.online_control_key
@@ -162,13 +169,6 @@ class LocalStorage(private val context: Context) {
         get() = appData.online_control_key_core
         set(value) {
             appData.online_control_key_core = value
-            writeToFile(appData)
-        }
-
-    var ref_data: String
-        get() = appData.ref_data
-        set(value) {
-            appData.ref_data = value
             writeToFile(appData)
         }
 
@@ -190,6 +190,43 @@ class LocalStorage(private val context: Context) {
             appData.ad_date_app = value
             writeToFile(appData)
         }
+
+
+    var up_install_thing: Boolean
+        get() = appData.up_install_thing
+        set(value) {
+            appData.up_install_thing = value
+            writeToFile(appData)
+        }
+    var vpn_per_up: Boolean
+        get() = appData.vpn_per_up
+        set(value) {
+            appData.vpn_per_up = value
+            writeToFile(appData)
+        }
+
+    var vpn_per_up2: Boolean
+        get() = appData.vpn_per_up2
+        set(value) {
+            appData.vpn_per_up2 = value
+            writeToFile(appData)
+        }
+
+    var cmpType: Boolean
+        get() = appData.cmpType
+        set(value) {
+            appData.cmpType = value
+            writeToFile(appData)
+        }
+
+    var adjustValue: Boolean
+        get() = appData.adjustValue
+        set(value) {
+            appData.adjustValue = value
+            writeToFile(appData)
+        }
+
+
     private fun writeToFile(data: AppData) {
         val dataString = gson.toJson(data)
         fileStorageManager.saveData(dataString)

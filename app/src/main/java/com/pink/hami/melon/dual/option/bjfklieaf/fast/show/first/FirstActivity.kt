@@ -8,6 +8,10 @@ import android.view.animation.LinearInterpolator
 import androidx.activity.addCallback
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
+import com.google.android.ump.ConsentDebugSettings
+import com.google.android.ump.ConsentInformation
+import com.google.android.ump.ConsentRequestParameters
+import com.google.android.ump.UserMessagingPlatform
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.pink.hami.melon.dual.option.BuildConfig
@@ -20,6 +24,7 @@ import com.pink.hami.melon.dual.option.app.adload.GetAdData
 import com.pink.hami.melon.dual.option.databinding.ActivityFirstBinding
 import com.pink.hami.melon.dual.option.utils.DualContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
@@ -45,10 +50,13 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
     }
 
     override fun initializeData() {
+        updateUserOpinions()
         getFileBaseData()
         startNetworkTasks()
         observeViewModel()
         startCountdown()
+        DualONlineFun.emitSessionData()
+        DualONlineFun.emitPointData("v2proxy")
     }
 
     private fun observeViewModel() {
@@ -72,7 +80,7 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
 
     private suspend fun performNetworkTasks() {
         withContext(Dispatchers.IO) {
-            DualONlineFun.landingRemoteData(this@FirstActivity)
+            DualONlineFun.landingRemoteData()
             DualONlineFun.getLoadIp()
             DualONlineFun.getLoadOthIp()
             DualONlineFun.getBlackData(this@FirstActivity)
@@ -147,7 +155,6 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
                 val auth = Firebase.remoteConfig
                 auth.fetchAndActivate().addOnSuccessListener {
                     DualContext.localStorage.onlineAdBean = auth.getString(GetAdData.ad_key)
-                    DualContext.localStorage.onlineRefBean = auth.getString(GetAdData.ref_key)
                     DualContext.localStorage.online_control_bean =
                         auth.getString(GetAdData.control_key)
                     isCa = true
@@ -178,9 +185,46 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
         App.adManagerOpen.loadAd()
         App.adManagerHome.loadAd()
         App.adManagerConnect.loadAd()
-        showOpenAd()
+        wODFun()
         DualContext.localStorage.online_control_bean_core =  GetAdData.raoliu()
     }
-
-
+    private fun wODFun(){
+        GlobalScope.launch {
+            while (isActive){
+                if (DualContext.localStorage.cmpType) {
+                    showOpenAd()
+                    cancel()
+                }
+                delay(500)
+            }
+        }
+    }
+    private fun updateUserOpinions() {
+        if (DualContext.localStorage.cmpType) {
+            return
+        }
+        val debugSettings =
+            ConsentDebugSettings.Builder(this)
+                .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
+                .addTestDeviceHashedId("76A730E9AE68BD60E99DF7B83D65C4B4")
+                .build()
+        val params = ConsentRequestParameters
+            .Builder()
+            .setConsentDebugSettings(debugSettings)
+            .build()
+        val consentInformation: ConsentInformation = UserMessagingPlatform.getConsentInformation(this)
+        consentInformation.requestConsentInfoUpdate(
+            this,
+            params, {
+                UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) { loadAndShowError ->
+                    if (consentInformation.canRequestAds()) {
+                        DualContext.localStorage.cmpType= true
+                    }
+                }
+            },
+            {
+                DualContext.localStorage.cmpType= true
+            }
+        )
+    }
 }

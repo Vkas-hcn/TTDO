@@ -14,6 +14,7 @@ import com.pink.hami.melon.dual.option.utils.DualContext
 import com.google.gson.Gson
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.app.adload.GetAdData
+import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import com.pink.hami.melon.dual.option.utils.DulaShowDataUtils.getDualImage
 import kotlinx.coroutines.launch
 
@@ -30,6 +31,7 @@ class ListActivity : BaseActivity<ActivityListBinding>(
         }
         setResult(Activity.RESULT_OK, data)
         App.adManagerBack.loadAd()
+        DualONlineFun.emitPointData("v18proxy")
     }
 
     private fun setupListeners() {
@@ -50,7 +52,7 @@ class ListActivity : BaseActivity<ActivityListBinding>(
 
     override fun initializeData() {
         lifecycleScope.launch {
-            if (DualContext.isHaveServeData(this@ListActivity)) {
+            if (DualContext.isHaveServeData()) {
                 setupVpnServiceBean()
                 configureVpnServiceBeanDisplay()
                 setupAdapter()
