@@ -41,6 +41,7 @@ data class AppData(
     var vpn_per_up2: Boolean = false,
     var cmpType: Boolean = false,
     var adjustValue:Boolean = false,
+    var android_id_data:String = "",
 )
 
 class LocalStorage(private val context: Context) {
@@ -226,7 +227,12 @@ class LocalStorage(private val context: Context) {
             writeToFile(appData)
         }
 
-
+    var android_id_data: String
+        get() = appData.android_id_data
+        set(value) {
+            appData.android_id_data = value
+            writeToFile(appData)
+        }
     private fun writeToFile(data: AppData) {
         val dataString = gson.toJson(data)
         fileStorageManager.saveData(dataString)

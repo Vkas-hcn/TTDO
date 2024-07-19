@@ -3,6 +3,7 @@ package com.pink.hami.melon.dual.option.app.adload
 import android.content.Context
 import android.graphics.Outline
 import android.util.Base64
+import android.util.Log
 import android.view.View
 import android.view.ViewOutlineProvider
 import com.google.gson.Gson
@@ -83,12 +84,8 @@ object GetAdData {
     }
 
     fun getAdBlackData(): Boolean {
-        return when (getControlData().deer) {
+        val type = when (getControlData().deer) {
             "1" -> {
-                if (!DualContext.localStorage.locak_up) {
-                    DualONlineFun.emitPointData("v1proxy")
-                    DualContext.localStorage.locak_up = true
-                }
                 DualContext.localStorage.local_clock != "stringy"
             }
 
@@ -100,6 +97,12 @@ object GetAdData {
                 true
             }
         }
+        Log.e("TAG", "getAdBlackData: ${type}", )
+        if (type && !DualContext.localStorage.locak_up) {
+            DualONlineFun.emitPointData("v1proxy")
+            DualContext.localStorage.locak_up = true
+        }
+        return type
     }
 
     class getAdC : ViewOutlineProvider() {

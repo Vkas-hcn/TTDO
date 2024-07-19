@@ -1,8 +1,10 @@
 package com.pink.hami.melon.dual.option.utils
 import android.content.Context
+import com.android.volley.DefaultRetryPolicy
 import com.android.volley.Request
 import com.android.volley.RequestQueue
 import com.android.volley.Response
+import com.android.volley.TimeoutError
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
@@ -50,11 +52,26 @@ class DualOnlineFac(private val context: Context) {
             url,
             jsonBody,
             { response -> callback.onSuccess(response.toString()) },
-            { error -> callback.onFailure(error.toString()) }
+            { error ->
+                if (error is TimeoutError) {
+                    // Handle timeout error specifically
+                    callback.onFailure("Request timed out. Please try again later.")
+                } else {
+                    callback.onFailure(error.toString())
+                }
+            }
+        )
+
+        // Set a custom retry policy (5 seconds timeout, 2 retries, exponential backoff multiplier 2.0)
+        request.retryPolicy = DefaultRetryPolicy(
+            5000, // timeout in milliseconds
+            2, // number of retries
+            2.0f // backoff multiplier
         )
 
         requestQueue.add(request)
     }
+
 
     fun getServiceData(
         url: String,
@@ -74,7 +91,11 @@ class DualOnlineFac(private val context: Context) {
                 return headers
             }
         }
-
+        request.retryPolicy = DefaultRetryPolicy(
+            5000, // timeout in milliseconds
+            2, // number of retries
+            2.0f // backoff multiplier
+        )
         requestQueue.add(request)
     }
 }

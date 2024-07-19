@@ -206,7 +206,7 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
         val debugSettings =
             ConsentDebugSettings.Builder(this)
                 .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
-                .addTestDeviceHashedId("76A730E9AE68BD60E99DF7B83D65C4B4")
+                .addTestDeviceHashedId("BCD99A19DFC84C1B71AF2A884D73059C")
                 .build()
         val params = ConsentRequestParameters
             .Builder()
@@ -216,7 +216,7 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
         consentInformation.requestConsentInfoUpdate(
             this,
             params, {
-                UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) { loadAndShowError ->
+                UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) {
                     if (consentInformation.canRequestAds()) {
                         DualContext.localStorage.cmpType= true
                     }

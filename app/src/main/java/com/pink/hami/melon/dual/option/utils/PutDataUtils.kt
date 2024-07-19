@@ -63,20 +63,14 @@ object PutDataUtils {
                 //android_id
                 put("be", "1")
                 //system_language
-                put(
-                    "hunk",
-                    "${Locale.getDefault().language}_${Locale.getDefault().country}"
-                )
+                put("hunk", "${Locale.getDefault().language}_${Locale.getDefault().country}")
             })
 
             put("befuddle", JSONObject().apply {
                 //bundle_id
                 put("panic", App.getAppContext().packageName)
                 //distinct_id
-                put(
-                    "tuft",
-                    UUID.randomUUID().toString()
-                )
+                put("tuft", DualContext.localStorage.android_id_data)
             })
         }
     }
@@ -326,7 +320,7 @@ object PutDataUtils {
         }
     }
 
-    fun v12proxy(isConnect:Boolean){
+    fun v12proxy(isConnect: Boolean) {
         val text = if (isConnect) {
             "cont"
         } else {
@@ -341,7 +335,7 @@ object PutDataUtils {
     }
 
 
-    fun v14proxy(adBean: AdBean){
+    fun v14proxy(adBean: AdBean) {
         DualONlineFun.emitPointData(
             "v14proxy",
             "gg",
@@ -349,14 +343,14 @@ object PutDataUtils {
             "hh",
             App.vpnLink.toString()
         )
-        if(App.vpnLink && !DualContext.localStorage.online_control_bean_core){
+        if (App.vpnLink && !DualContext.localStorage.online_control_bean_core) {
             DualONlineFun.emitPointData(
                 "v22proxy",
                 "gg",
                 adBean.netu,
             )
         }
-        if(App.vpnLink){
+        if (App.vpnLink) {
             DualONlineFun.emitPointData(
                 "v23proxy",
                 "gg",
@@ -366,7 +360,7 @@ object PutDataUtils {
 
     }
 
-    fun v15proxy(adBean: AdBean){
+    fun v15proxy(adBean: AdBean) {
         DualONlineFun.emitPointData(
             "v15proxy",
             "gg",
@@ -374,7 +368,7 @@ object PutDataUtils {
         )
     }
 
-    fun v17proxy(adBean: AdBean,errorString: String){
+    fun v17proxy(adBean: AdBean, errorString: String) {
         DualONlineFun.emitPointData(
             "v17proxy",
             "gg",

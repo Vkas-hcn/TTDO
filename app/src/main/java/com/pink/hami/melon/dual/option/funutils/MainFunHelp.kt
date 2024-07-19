@@ -166,9 +166,12 @@ class MainFunHelp {
         fileStorageManager: FileStorageManager,
         activity: MainActivity
     ) {
-        val appData = fileStorageManager.loadData()?.let { parseAppData(it) }
-        activity.binding.tvDow.text = appData?.dual_sp_dow
-        activity.binding.tvUp.text = appData?.dual_sp_up
+        val json = fileStorageManager.loadData()
+        if(!json.isNullOrBlank()){
+            val appData = fileStorageManager.loadData()?.let { parseAppData(it) }
+            activity.binding.tvDow.text = appData?.dual_sp_dow
+            activity.binding.tvUp.text = appData?.dual_sp_up
+        }
     }
 
     private fun parseAppData(json: String): AppData {

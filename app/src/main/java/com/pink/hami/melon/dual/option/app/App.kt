@@ -109,8 +109,12 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         if (isMainProcess(this)) {
             instance = this
             val data = DualContext.localStorage.uuid_dualLoadile
+            val id = DualContext.localStorage.android_id_data
             if (data.isEmpty()) {
                 DualContext.localStorage.uuid_dualLoadile = UUID.randomUUID().toString()
+            }
+            if (id.isBlank()) {
+                DualContext.localStorage.android_id_data = UUID.randomUUID().toString()
             }
             haveRefDataChangingBean(this)
         }
