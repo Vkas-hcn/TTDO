@@ -8,8 +8,8 @@ import com.pink.hami.melon.dual.option.utils.DualONlineFun
 object FinishViewFun {
     fun returnToHomePage(activity: FinishActivity) {
         DualONlineFun.emitPointData("v21proxy")
-        if (App.adManagerBack.hasAdDataForPosition()) {
-            App.adManagerBack.showAd(activity) {
+        if (App.adManagerBackResult.hasAdDataForPosition()) {
+            App.adManagerBackResult.showAd(activity) {
                 activity.finish()
             }
         } else {

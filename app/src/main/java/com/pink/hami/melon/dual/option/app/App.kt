@@ -54,7 +54,9 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         lateinit var adManagerHome: AdManager
         lateinit var adManagerEnd: AdManager
         lateinit var adManagerConnect: AdManager
-        lateinit var adManagerBack: AdManager
+        lateinit var adManagerBackService: AdManager
+        lateinit var adManagerBackResult: AdManager
+
         var top_activity_name: String? = null
 
     }
@@ -86,7 +88,9 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
                 adManagerHome = AdManager.getInstance(this, GetAdData.AdWhere.HOME)
                 adManagerEnd = AdManager.getInstance(this, GetAdData.AdWhere.END)
                 adManagerConnect = AdManager.getInstance(this, GetAdData.AdWhere.CONNECT)
-                adManagerBack = AdManager.getInstance(this, GetAdData.AdWhere.BACK)
+                adManagerBackService = AdManager.getInstance(this, GetAdData.AdWhere.BACK_SERVICE)
+                adManagerBackResult = AdManager.getInstance(this, GetAdData.AdWhere.BACK_RESULT)
+
             }
         }
     }

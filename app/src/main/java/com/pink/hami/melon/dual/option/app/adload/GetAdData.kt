@@ -19,7 +19,8 @@ object GetAdData {
         HOME,
         END,
         CONNECT,
-        BACK
+        BACK_SERVICE,
+        BACK_RESULT
     }
 
     const val ad_key = "oee"
@@ -97,7 +98,6 @@ object GetAdData {
                 true
             }
         }
-        Log.e("TAG", "getAdBlackData: ${type}", )
         if (type && !DualContext.localStorage.locak_up) {
             DualONlineFun.emitPointData("v1proxy")
             DualContext.localStorage.locak_up = true

@@ -281,7 +281,7 @@ class MainFunHelp {
 
     private fun homeLoadAd() {
         App.adManagerConnect.loadAd()
-        App.adManagerBack.loadAd()
+        App.adManagerBackResult.loadAd()
         App.adManagerEnd.loadAd()
     }
 

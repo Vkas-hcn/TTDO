@@ -102,8 +102,8 @@ object ListFunHelp {
 
     fun returnToHomePage(activity: ListActivity) {
         DualONlineFun.emitPointData("v20proxy")
-        if (App.adManagerBack.hasAdDataForPosition()) {
-            App.adManagerBack.showAd(activity) {
+        if (App.adManagerBackService.hasAdDataForPosition()) {
+            App.adManagerBackService.showAd(activity) {
                 activity.finish()
             }
         } else {

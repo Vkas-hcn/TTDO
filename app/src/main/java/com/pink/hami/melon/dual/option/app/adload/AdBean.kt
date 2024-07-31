@@ -18,6 +18,7 @@ data class AdListBean(
     val net2: Int,
     val net1: Int,
     val hury: MutableList<AdBean>,
+    val mgat: MutableList<AdBean>,
     val bathe: MutableList<AdBean>,
     val mouth: MutableList<AdBean>,
     val cheap: MutableList<AdBean>,

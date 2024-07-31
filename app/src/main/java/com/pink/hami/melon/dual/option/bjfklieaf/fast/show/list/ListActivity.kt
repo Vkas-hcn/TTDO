@@ -30,7 +30,7 @@ class ListActivity : BaseActivity<ActivityListBinding>(
             putExtra("key", "value")
         }
         setResult(Activity.RESULT_OK, data)
-        App.adManagerBack.loadAd()
+        App.adManagerBackService.loadAd()
         DualONlineFun.emitPointData("v18proxy")
     }
 

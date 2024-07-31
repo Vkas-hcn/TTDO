@@ -39,7 +39,7 @@ class FinishActivity : BaseActivity<ActivityFinishBinding>(
             putExtra("key", "value")
         }
         setResult(Activity.RESULT_OK, data)
-        App.adManagerBack.loadAd()
+        App.adManagerBackResult.loadAd()
         App.adManagerEnd.loadAd()
         showHomeAd()
         PutDataUtils.v12proxy(isConnect)
