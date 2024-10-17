@@ -234,7 +234,7 @@ object DualONlineFun {
                 json,
                 object : DualOnlineFac.Callback {
                     override fun onSuccess(response: String) {
-                        Log.e("TAG", "${adKey}-广告事件上报-成功->")
+                        Log.e("TAG", "${adKey}-广告事件上报-成功->${response}")
                     }
 
                     override fun onFailure(error: String) {
@@ -250,7 +250,7 @@ object DualONlineFun {
 
     fun beforeLoadLinkSettingsTTD(ufDetailBean: AdBean?): AdBean? {
         var data = false
-        if (App.vpnLink && !DualContext.localStorage.online_control_bean_core) {
+        if (App.vpnLink) {
             ufDetailBean?.ttd_load_ip = DualContext.localStorage.vpn_ip_dualLoad
             ufDetailBean?.ttd_load_city = DualContext.localStorage.vpn_city
         } else {
@@ -266,7 +266,7 @@ object DualONlineFun {
 
     fun afterLoadLinkSettingsTTD(ufDetailBean: AdBean?): AdBean? {
         var data = false
-        if (App.vpnLink && !DualContext.localStorage.online_control_bean_core) {
+        if (App.vpnLink) {
             ufDetailBean?.ttd_show_ip = DualContext.localStorage.vpn_ip_dualLoad
             ufDetailBean?.ttd_show_city = DualContext.localStorage.vpn_city
         } else {

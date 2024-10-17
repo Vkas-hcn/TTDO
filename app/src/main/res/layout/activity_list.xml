@@ -113,7 +113,11 @@
                 android:singleLine="true"
                 android:textColor="@color/white"
                 android:textColorHint="#AEB5CE"
-                android:textSize="16sp" />
+                android:textSize="16sp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:cursorVisible="false"
+                android:inputType="none"/>
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -175,7 +179,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Ads will show soon..."
+                    android:text="Loading..."
                     android:textColor="@color/black"
                     android:textSize="12sp" />
             </LinearLayout>

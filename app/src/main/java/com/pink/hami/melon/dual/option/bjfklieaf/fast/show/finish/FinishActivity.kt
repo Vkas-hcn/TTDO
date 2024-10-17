@@ -39,35 +39,35 @@ class FinishActivity : BaseActivity<ActivityFinishBinding>(
             putExtra("key", "value")
         }
         setResult(Activity.RESULT_OK, data)
-        App.adManagerBackResult.loadAd()
-        App.adManagerEnd.loadAd()
-        showHomeAd()
+        showEndAd()
         PutDataUtils.v12proxy(isConnect)
     }
 
-    private fun showHomeAd() {
+    private fun showEndAd() {
         jobEndTdo?.cancel()
         jobEndTdo = null
-        if (App.adManagerHome.canShowAd() == 2) {
+        if (GetAdData.isShowAdOc()) {
+            binding.adLayoutAdmob.isVisible = false
             binding.imgOcAd.isVisible = true
+            return
         }
+        if (App.adManagerEnd.canShowAd() == 0) {
+            binding.adLayout.isVisible = false
+            return
+        }
+        binding.adLayout.isVisible = true
+        binding.imgOcAd.isVisible = true
+        App.adManagerEnd.loadAd()
         jobEndTdo = lifecycleScope.launch {
             delay(300)
             while (isActive) {
-                if (App.adManagerEnd.canShowAd() == 0) {
-                    jobEndTdo?.cancel()
-                    jobEndTdo = null
-                    binding.adLayout.isVisible = false
-                    break
-                }
                 if (App.adManagerEnd.canShowAd() == 1) {
-                    App.adManagerEnd.showAd(this@FinishActivity) {
-                    }
+                    App.adManagerEnd.showAd(this@FinishActivity)
                     jobEndTdo?.cancel()
                     jobEndTdo = null
                     break
                 }
-                delay(500L)
+                delay(200L)
             }
         }
     }

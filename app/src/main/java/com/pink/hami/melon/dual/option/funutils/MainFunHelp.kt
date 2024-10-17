@@ -30,6 +30,7 @@ import com.github.shadowsocks.database.ProfileManager
 import com.github.shadowsocks.preference.DataStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.pink.hami.melon.dual.option.app.adload.GetAdData
 import com.pink.hami.melon.dual.option.utils.AppData
 import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import com.pink.hami.melon.dual.option.utils.FileStorageManager
@@ -40,6 +41,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream
@@ -94,7 +96,6 @@ class MainFunHelp {
             }
         }
     }
-
 
 
     fun initData(activity: MainActivity, call: ShadowsocksConnection.Callback) {
@@ -167,7 +168,7 @@ class MainFunHelp {
         activity: MainActivity
     ) {
         val json = fileStorageManager.loadData()
-        if(!json.isNullOrBlank()){
+        if (!json.isNullOrBlank()) {
             val appData = fileStorageManager.loadData()?.let { parseAppData(it) }
             activity.binding.tvDow.text = appData?.dual_sp_dow
             activity.binding.tvUp.text = appData?.dual_sp_up
@@ -177,7 +178,7 @@ class MainFunHelp {
     private fun parseAppData(json: String): AppData? {
         return try {
             Gson().fromJson(json, AppData::class.java)
-        }catch (e:NullPointerException){
+        } catch (e: NullPointerException) {
             null
         }
     }
@@ -225,11 +226,11 @@ class MainFunHelp {
             }
             setTypeService(activity as MainActivity, 1)
             delay(2000)
-            if(!isActive){
+            if (!isActive) {
                 return@launch
             }
             if (App.vpnLink) {
-                showConnectAd(activity)
+                showConnectAd(activity,GetAdData.getConnectTime().second)
             } else {
                 ljVPn(activity)
             }
@@ -239,13 +240,15 @@ class MainFunHelp {
     private fun showFinishAd(activity: MainActivity) {
         if (nowClickState == "0") {
             connectFinish(activity)
+            App.adManagerConnect.loadAd()
+            App.adManagerHome.loadAd()
         }
         if (nowClickState == "2") {
             disConnectFinish(activity)
         }
     }
 
-    fun showConnectAd(activity: MainActivity) {
+    fun showConnectAd(activity: MainActivity,ctime:Int) {
         jobConnectTTD?.cancel()
         jobConnectTTD = null
         jobConnectTTD = activity.lifecycleScope.launch {
@@ -253,12 +256,13 @@ class MainFunHelp {
                 showFinishAd(activity)
                 return@launch
             }
+            App.adManagerConnect.loadAd()
             val startTime = System.currentTimeMillis()
             var elapsedTime: Long
             try {
                 while (isActive) {
                     elapsedTime = System.currentTimeMillis() - startTime
-                    if (elapsedTime >= 10000L) {
+                    if (elapsedTime >= (ctime*1000)) {
                         Log.e("TAG", "连接超时")
                         showFinishAd(activity)
                         break
@@ -276,13 +280,11 @@ class MainFunHelp {
                 showFinishAd(activity)
             }
         }
-        homeLoadAd()
     }
 
-    private fun homeLoadAd() {
-        App.adManagerConnect.loadAd()
-        App.adManagerBackResult.loadAd()
+     fun homeLoadAd() {
         App.adManagerEnd.loadAd()
+        App.adManagerBackResult.loadAd()
     }
 
     private fun ljVPn(activity: MainActivity) {
@@ -294,6 +296,8 @@ class MainFunHelp {
             Core.stopService()
         } else {
             mService?.disconnect()
+            DualContext.localStorage.vpn_city = GetAdData.nowLoadCityZone
+            DualContext.localStorage.vpn_ip_dualLoad =  GetAdData.nowLoadIpZone
             Core.startService()
         }
     }
@@ -498,6 +502,7 @@ class MainFunHelp {
                     }
                 ).append("\n")
             }
+            Timber.tag("TAG").e("open vpn config:$reader")
         } catch (e: IOException) {
             Log.e("TAG", "Error reading config file: ${e.message}")
         } finally {

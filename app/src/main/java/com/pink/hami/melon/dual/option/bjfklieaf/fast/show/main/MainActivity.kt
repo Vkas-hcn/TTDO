@@ -38,6 +38,7 @@ import kotlinx.coroutines.launch
 import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.app.adload.GetAdData
+import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.list.ListActivity
 import com.pink.hami.melon.dual.option.databinding.ActivityMainBinding
 import com.pink.hami.melon.dual.option.funutils.MainFunHelp
 import com.pink.hami.melon.dual.option.utils.PutDataUtils
@@ -55,9 +56,6 @@ import kotlinx.coroutines.withTimeout
 class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
     ShadowsocksConnection.Callback,
     OnPreferenceDataStoreChangeListener, MainInterface {
-    companion object {
-        var stateListener: ((BaseService.State) -> Unit)? = null
-    }
 
     var mainInterface: MainInterface? = null
     fun setMainCallback(mainCall: MainInterface) {
@@ -80,16 +78,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
         mainInterface?.clickListenerInter()
         mainInterface?.initVpnSettingInter()
         mainInterface?.setServiceDataInter()
-        onBackPressedDispatcher.addCallback(this) {
-            if (binding.showGuide == true || binding.dlMain.isOpen) {
-                binding.showGuide = false
-                binding.dlMain.close()
-            } else {
-                mainFun.clickChange(this@MainActivity, nextFun = {
-                    finish()
-                })
-            }
-        }
         TimerObservers.addObserver { timeString ->
             runOnUiThread {
                 binding.tvTime.text = timeString
@@ -108,31 +96,35 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
     }
 
     override fun initializeData() {
-//        if (ipChecker.checkIp()) {
-//            dialogHandler.showCannotUseDialog()
-//            return
-//        }
+        if (ipChecker.checkIp()) {
+            dialogHandler.showCannotUseDialog()
+            return
+        }
         mainFun.initData(this, this)
         showHomeAd()
     }
 
+
     private fun showHomeAd() {
         jobHomeTdo?.cancel()
         jobHomeTdo = null
-        if (App.adManagerHome.canShowAd() == 2) {
-            binding.imgOcAd.isVisible = true
+        if (GetAdData.getAdBlackData()) {
+            binding.adLayout.isVisible = false
+            return
         }
+        if (GetAdData.isShowAdOc()) {
+            binding.adLayoutAdmob.isVisible = false
+            binding.imgOcAd.isVisible = true
+            return
+        }
+        binding.adLayout.isVisible = true
+        binding.imgOcAd.isVisible = true
+        App.adManagerHome.loadAd()
         jobHomeTdo = lifecycleScope.launch {
             delay(300)
             while (isActive) {
-                if (App.adManagerHome.canShowAd() == 0) {
-                    binding.adLayout.isVisible = false
-                    break
-                }
-
                 if (App.adManagerHome.canShowAd() == 1) {
-                    App.adManagerHome.showAd(this@MainActivity) {
-                    }
+                    App.adManagerHome.showAd(this@MainActivity)
                     jobHomeTdo?.cancel()
                     jobHomeTdo = null
                     break
@@ -155,6 +147,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
                 .setCancelable(false)
                 .setPositiveButton("OK") { dialog, _ ->
                     dialog.dismiss()
+                    setModelUI(state)
                     toConnectVpn()
                     binding.agreement = type
                     DualONlineFun.emitPointData("v19proxy")
@@ -194,10 +187,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
                 if (!App.vpnLink) {
                     DualContext.localStorage.connection_mode = binding?.agreement!!
                 }
-//                if (ipChecker.checkIp()) {
-//                    dialogHandler.showCannotUseDialog()
-//                    return@launch
-//                }
+                if (ipChecker.checkIp()) {
+                    dialogHandler.showCannotUseDialog()
+                    return@launch
+                }
                 if (!DualContext.localStorage.vpn_per_up) {
                     DualContext.localStorage.vpn_per_up = true
                     DualONlineFun.emitPointData("v7proxy")
@@ -277,9 +270,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
 
     override fun onResume() {
         super.onResume()
-        if (binding.imgOcAd.isVisible) {
-            App.adManagerHome.loadAd()
-        }
     }
 
 
@@ -305,9 +295,16 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
         }
     }
 
+    val serverPrivateLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                showHomeAd()
+            }
+        }
     val serverListLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
+                showHomeAd()
                 handleServerListResult(result.data)
             }
         }
@@ -315,6 +312,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
     val finishPageLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
+                showHomeAd()
                 handleFinishPageResult(result.data)
             }
         }
@@ -344,25 +342,34 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
 
 
     override fun stateChanged(state: BaseService.State, profileName: String?, msg: String?) {
+        Log.e("TAG", "Lifecycle-ss ${state.name}")
         if (state.name == "Connected") {
             App.vpnLink = true
-            Log.e("TAG", "ss vpn连接成功")
+            Log.e("TAG", "ss vpn连接成功--${mainFun.nowClickState}")
             if (mainFun.nowClickState != "1") {
-                mainFun.showConnectAd(this)
+                mainFun.showConnectAd(this,GetAdData.getConnectTime().first)
+                mainFun.homeLoadAd()
+                PutDataUtils.v10proxy()
+            } else {
+                mainFun.setTypeService(this, 2)
             }
-            mainFun.setTypeService(this, 2)
-            PutDataUtils.v10proxy()
+        }
+        if (state.name == "Stopping") {
+            App.vpnLink = false
         }
         if (state.name == "Stopped") {
             App.vpnLink = false
             Log.e("TAG", "ss vpn断开成功")
-            mainFun.setTypeService(this, 0)
+            if (mainFun.nowClickState != "1") {
+                mainFun.setTypeService(this, 0)
+            }
         }
     }
 
     override fun onServiceConnected(service: IShadowsocksService) {
         val state = BaseService.State.values()[service.state]
-        Log.e("TAG", "ss-初始化: ${state.name}")
+        Log.e("TAG", "Lifecycle-ss-初始化 ${state.name}")
+
         if (state.name == "Connected") {
             setSsVpnState(true)
         }
@@ -372,13 +379,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
     }
 
     private fun setSsVpnState(canStop: Boolean) {
-        if (DualContext.localStorage.connection_mode != "1") {
-            App.vpnLink = canStop
-            if (App.vpnLink) {
-                mainFun.setTypeService(this, 2)
-            } else {
-                mainFun.setTypeService(this, 0)
-            }
+        App.vpnLink = canStop
+        if (App.vpnLink) {
+            mainFun.setTypeService(this, 2)
+        } else {
+            mainFun.setTypeService(this, 0)
         }
     }
 
@@ -396,16 +401,18 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
         if (DualContext.localStorage.connection_mode != "1") {
             return
         }
-        Log.e("TAG", "openLifecycle: ${state}", )
+        Log.e("TAG", "Lifecycle-open ${state}")
         when (state) {
             "CONNECTED" -> {
                 App.vpnLink = true
                 Log.e("TAG", "open vpn连接成功")
                 if (mainFun.nowClickState != "1") {
-                    mainFun.showConnectAd(this)
+                    mainFun.showConnectAd(this,GetAdData.getConnectTime().first)
+                    mainFun.homeLoadAd()
+                    PutDataUtils.v10proxy()
+                } else {
+                    mainFun.setTypeService(this, 2)
                 }
-                mainFun.setTypeService(this, 2)
-                PutDataUtils.v10proxy()
             }
 
             "RECONNECTING", "EXITING", "CONNECTRETRY" -> {
@@ -415,14 +422,42 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
 
             "NOPROCESS" -> {
                 Log.e("TAG", "open vpn断开成功")
-                mainFun.mService?.disconnect()
                 App.vpnLink = false
-                mainFun.setTypeService(this, 0)
+                if (mainFun.nowClickState != "1") {
+                    mainFun.setTypeService(this, 0)
+                }
             }
         }
     }
 
     override fun checkAgreementInter(state: AgreementStatus) {
+        val type = when (state) {
+            AgreementStatus.Auto -> "0"
+            AgreementStatus.SS -> "1"
+            AgreementStatus.Open -> "2"
+        }
+        if (App.vpnLink) {
+            if (state == AgreementStatus.Auto && binding.agreement != "0") {
+                showSwitching(state)
+                return
+            }
+            if (state == AgreementStatus.SS && binding.agreement != "1") {
+                showSwitching(state)
+                return
+            }
+            if (state == AgreementStatus.Open && binding.agreement != "2") {
+                showSwitching(state)
+                return
+            }
+            binding.agreement = type
+        } else {
+            binding.agreement = type
+        }
+        setModelUI(state)
+    }
+
+
+    private fun setModelUI(state: AgreementStatus) {
         if (state == AgreementStatus.Auto) {
             binding.tvAuto.background =
                 ContextCompat.getDrawable(this, R.drawable.bg_auto_text_op)
@@ -442,24 +477,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
             binding.tvSs.background =
                 ContextCompat.getDrawable(this, R.drawable.bg_auto_text_op)
             binding.tvOpen.background = null
-        }
-        val type = when (state) {
-            AgreementStatus.Auto -> "0"
-            AgreementStatus.SS -> "1"
-            AgreementStatus.Open -> "2"
-        }
-        if (App.vpnLink) {
-            if (state == AgreementStatus.SS && binding.agreement != "1") {
-                showSwitching(state)
-                return
-            }
-            if (state != AgreementStatus.SS && binding.agreement == "1") {
-                showSwitching(state)
-                return
-            }
-            binding.agreement = type
-        } else {
-            binding.agreement = type
         }
     }
 
@@ -496,13 +513,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
                 toClickConnect()
             })
         }
-        binding.lavDual.setOnClickListener {
-            mainFun.clickChange(this, nextFun = {
-                toClickConnect()
-            })
-        }
-        binding.viewGuideDual.setOnClickListener {
-        }
 
         binding.imgSetting.setOnClickListener {
             mainFun.clickDisConnect(this, nextFun = {
@@ -513,7 +523,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
         }
 
         binding.tvPp.setOnClickListener {
-            launchActivity<AgreementActivity>()
+            serverPrivateLauncher.launch(Intent(this, AgreementActivity::class.java))
         }
 
         binding.tvAuto.setOnClickListener {

@@ -84,11 +84,39 @@ class AdManager private constructor(
             Log.e("TAG", "${adPosition}-广告超限-无法加载")
             return
         }
-        if (isAdAvailable()) return
+        if (!App.vpnLink) {
+            Log.e("TAG", "${adPosition}-vpn未连接-无法加载")
+            return
+        }
+        if ((getLoadIp().isNotEmpty()) && getLoadIp() != DualContext.localStorage.vpn_ip_dualLoad) {
+            Log.e(
+                "TAG",
+                "${adPosition}-ip不一致-重新加载-load_ip=${getLoadIp()}-now-ip=${DualContext.localStorage.vpn_ip_dualLoad}"
+            )
+            clearAd()
+            clearLoadIp()
+            loadAd()
+            return
+        }
+        if (isAdAvailable()) {
+            Log.e("TAG", "${adPosition}广告-已有过期-重新加载")
+            clearAd()
+            clearLoadIp()
+            loadAd()
+            return
+        }
 
+        if (hasAdDataForPosition()) {
+            Log.e("TAG", "${adPosition}广告-已有缓存-无法加载")
+            return
+        }
         val blackData = GetAdData.getAdBlackData()
-        if (blackData && (adPosition == GetAdData.AdWhere.HOME || adPosition == GetAdData.AdWhere.CONNECT || adPosition == GetAdData.AdWhere.BACK_SERVICE|| adPosition == GetAdData.AdWhere.BACK_RESULT)) {
+        if (blackData && (adPosition == GetAdData.AdWhere.HOME || adPosition == GetAdData.AdWhere.CONNECT || adPosition == GetAdData.AdWhere.BACK_SERVICE || adPosition == GetAdData.AdWhere.BACK_RESULT)) {
             Log.e("TAG", "黑名单屏蔽${adPosition}广告")
+            return
+        }
+        if (isAdLoading) {
+            Log.e("TAG", "${adPosition}广告-加载中-无法再次加载")
             return
         }
         adIndex = 0
@@ -105,8 +133,23 @@ class AdManager private constructor(
         this.onAdClosedCallback = onAdClosedCallback
         Log.e("TAG", "${adPosition}-广告位是否是前台-${isAppInForeground}")
         if (!isAppInForeground) return
-
-        Log.e("TAG", "${adPosition}广告-开始展示")
+        if (!App.vpnLink) {
+            Log.e("TAG", "${adPosition}-vpn未连接-无法展示")
+            onAdClosedCallback?.invoke()
+            return
+        }
+        if ((getLoadIp().isNotEmpty()) && getLoadIp() != DualContext.localStorage.vpn_ip_dualLoad) {
+            Log.e(
+                "TAG",
+                "${adPosition}-ip不一致-无法展示-load_ip=%${getLoadIp()}-now-ip=${DualContext.localStorage.vpn_ip_dualLoad}"
+            )
+            onAdClosedCallback?.invoke()
+            return
+        }
+        Log.e(
+            "TAG",
+            "${adPosition}-ip一致-开始展示-load_ip=${getLoadIp()}-now-ip=${DualContext.localStorage.vpn_ip_dualLoad}"
+        )
         when (ad) {
             is AppOpenAd -> {
                 (ad as AppOpenAd).fullScreenContentCallback = object : FullScreenContentCallback() {
@@ -131,15 +174,13 @@ class AdManager private constructor(
                 (ad as InterstitialAd).fullScreenContentCallback =
                     object : FullScreenContentCallback() {
                         override fun onAdDismissedFullScreenContent() {
+                            clearAd()
+                            incrementOpenCount()
                             onAdClosedCallback?.invoke()
                         }
 
                         override fun onAdShowedFullScreenContent() {
-                            clearAd()
-                            if (adPosition == GetAdData.AdWhere.CONNECT) {
-                                loadAd()
-                            }
-                            incrementOpenCount()
+
                         }
 
                         override fun onAdClicked() {
@@ -169,9 +210,11 @@ class AdManager private constructor(
                         GetAdData.AdWhere.CONNECT -> {
                             ad_C = DualONlineFun.afterLoadLinkSettingsTTD(ad_C)
                         }
+
                         GetAdData.AdWhere.BACK_SERVICE -> {
                             ad_B_S = DualONlineFun.afterLoadLinkSettingsTTD(ad_B_S)
                         }
+
                         else -> {
                             ad_B_C = DualONlineFun.afterLoadLinkSettingsTTD(ad_B_C)
 
@@ -191,8 +234,11 @@ class AdManager private constructor(
     }
 
     fun canShowAd(): Int {
+        if (!App.vpnLink) {
+            return 0
+        }
         val blackData = GetAdData.getAdBlackData()
-        if (blackData && (adPosition == GetAdData.AdWhere.HOME || adPosition == GetAdData.AdWhere.CONNECT || adPosition == GetAdData.AdWhere.BACK_SERVICE|| adPosition == GetAdData.AdWhere.BACK_RESULT)) {
+        if (blackData && (adPosition == GetAdData.AdWhere.HOME || adPosition == GetAdData.AdWhere.CONNECT || adPosition == GetAdData.AdWhere.BACK_SERVICE || adPosition == GetAdData.AdWhere.BACK_RESULT)) {
             onAdClosedCallback?.invoke()
             return 0
         }
@@ -208,12 +254,12 @@ class AdManager private constructor(
         return 1
     }
 
-    fun hasAdDataForPosition(): Boolean {
+    private fun hasAdDataForPosition(): Boolean {
         return ad != null && !isAdExpired()
     }
 
     private fun isAdAvailable(): Boolean {
-        return ad != null && !isAdExpired()
+        return ad != null && isAdExpired()
     }
 
     private fun isAdExpired(): Boolean {
@@ -224,6 +270,62 @@ class AdManager private constructor(
     private fun clearAd() {
         ad = null
         isAdLoading = false
+    }
+
+    private fun clearLoadIp() {
+        when (adPosition) {
+            GetAdData.AdWhere.GUIDE -> {
+                GetAdData.guideLoadIp = ""
+            }
+
+            GetAdData.AdWhere.CONNECT -> {
+                GetAdData.connectLoadIp = ""
+            }
+
+            GetAdData.AdWhere.BACK_RESULT -> {
+                GetAdData.backResultLoadIp = ""
+            }
+
+            GetAdData.AdWhere.BACK_SERVICE -> {
+                GetAdData.backServiceLoadIp = ""
+            }
+
+            GetAdData.AdWhere.HOME -> {
+                GetAdData.homeLoadIp = ""
+            }
+
+            GetAdData.AdWhere.END -> {
+                GetAdData.endLoadIp = ""
+            }
+        }
+    }
+
+    private fun getLoadIp(): String {
+        return when (adPosition) {
+            GetAdData.AdWhere.GUIDE -> {
+                GetAdData.guideLoadIp
+            }
+
+            GetAdData.AdWhere.CONNECT -> {
+                GetAdData.connectLoadIp
+            }
+
+            GetAdData.AdWhere.BACK_RESULT -> {
+                GetAdData.backResultLoadIp
+            }
+
+            GetAdData.AdWhere.BACK_SERVICE -> {
+                GetAdData.backServiceLoadIp
+            }
+
+            GetAdData.AdWhere.HOME -> {
+                GetAdData.homeLoadIp
+            }
+
+            GetAdData.AdWhere.END -> {
+                GetAdData.endLoadIp
+            }
+        }
     }
 
     fun isHaveAdData(): Boolean {
@@ -280,6 +382,9 @@ class AdManager private constructor(
         val adBean = adBeans[adIndex]
         val request = AdRequest.Builder().build()
         ad_O = DualONlineFun.beforeLoadLinkSettingsTTD(adBean)
+        if (App.vpnLink) {
+            GetAdData.guideLoadIp = ad_O?.ttd_load_ip ?: ""
+        }
         PutDataUtils.v14proxy(adBean)
         Log.e("TAG", "${adPosition}广告-开始加载;neta=${adBean.neta};id=${adBean.netw}")
         AppOpenAd.load(
@@ -321,10 +426,12 @@ class AdManager private constructor(
                 adList?.bathe?.filter { it.netu == adPosition.toString() }
                     ?.sortedByDescending { it.neta }
             }
+
             GetAdData.AdWhere.BACK_SERVICE -> {
                 adList?.hury?.filter { it.netu == adPosition.toString() }
                     ?.sortedByDescending { it.neta }
             }
+
             else -> {
                 adList?.mgat?.filter { it.netu == adPosition.toString() }
                     ?.sortedByDescending { it.neta }
@@ -340,12 +447,23 @@ class AdManager private constructor(
         when (adPosition) {
             GetAdData.AdWhere.CONNECT -> {
                 ad_C = DualONlineFun.beforeLoadLinkSettingsTTD(adBean)
+                if (App.vpnLink) {
+                    GetAdData.connectLoadIp = ad_C?.ttd_load_ip ?: ""
+                }
             }
+
             GetAdData.AdWhere.BACK_SERVICE -> {
                 ad_B_S = DualONlineFun.beforeLoadLinkSettingsTTD(adBean)
+                if (App.vpnLink) {
+                    GetAdData.backServiceLoadIp = ad_B_S?.ttd_load_ip ?: ""
+                }
             }
+
             else -> {
                 ad_B_C = DualONlineFun.beforeLoadLinkSettingsTTD(adBean)
+                if (App.vpnLink) {
+                    GetAdData.backResultLoadIp = ad_B_C?.ttd_load_ip ?: ""
+                }
             }
         }
         val request = AdRequest.Builder().build()
@@ -370,12 +488,14 @@ class AdManager private constructor(
                                         it1, ad_C, "Int", "bathe"
                                     )
                                 }
+
                                 GetAdData.AdWhere.BACK_SERVICE -> {
                                     DualONlineFun.emitAdData(
                                         adValue,
                                         it1, ad_B_S, "Int", "hury"
                                     )
                                 }
+
                                 else -> {
                                     DualONlineFun.emitAdData(
                                         adValue,
@@ -385,7 +505,6 @@ class AdManager private constructor(
                             }
                         }
                         DualONlineFun.toBuriedPointAdValueTTD(adValue, loadedAd.responseInfo)
-                        loadAd()
                     }
                 }
 
@@ -415,8 +534,14 @@ class AdManager private constructor(
         PutDataUtils.v14proxy(adBean)
         if (adPosition == GetAdData.AdWhere.HOME) {
             ad_H = DualONlineFun.beforeLoadLinkSettingsTTD(adBean)
+            if (App.vpnLink) {
+                GetAdData.homeLoadIp = ad_H?.ttd_load_ip ?: ""
+            }
         } else {
             ad_E = DualONlineFun.beforeLoadLinkSettingsTTD(adBean)
+            if (App.vpnLink) {
+                GetAdData.endLoadIp = ad_E?.ttd_load_ip ?: ""
+            }
         }
         val adLoader = AdLoader.Builder(application, adBean.netw)
             .forNativeAd { unifiedNativeAd ->
@@ -427,7 +552,7 @@ class AdManager private constructor(
                 PutDataUtils.v15proxy(adBean)
                 unifiedNativeAd.setOnPaidEventListener { adValue ->
                     unifiedNativeAd.responseInfo?.let { it1 ->
-                        Log.e("TBA", "result广告开始上报")
+                        Log.e("TBA", "${adPosition}广告开始上报")
                         if (adPosition == GetAdData.AdWhere.HOME) {
                             DualONlineFun.emitAdData(
                                 adValue,
@@ -444,7 +569,9 @@ class AdManager private constructor(
                             it1
                         )
                     }
-                    loadAd()
+                    if (adPosition == GetAdData.AdWhere.HOME) {
+                        loadAd()
+                    }
                 }
 
             }
@@ -472,12 +599,6 @@ class AdManager private constructor(
                 val state = activity.lifecycle.currentState == Lifecycle.State.RESUMED
 
                 if (state) {
-                    val blackData = GetAdData.getAdBlackData()
-                    if (blackData) {
-                        activity.binding.adLayout.isVisible = false
-                        Log.e("TAG", "买量屏蔽Home广告")
-                        return@let
-                    }
                     activity.binding.imgOcAd.isVisible = true
 
                     if (activity.isDestroyed || activity.isFinishing || activity.isChangingConfigurations) {

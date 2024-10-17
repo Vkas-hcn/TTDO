@@ -9,6 +9,7 @@ import com.pink.hami.melon.dual.option.bean.VpnServiceBean
 import com.github.shadowsocks.database.Profile
 import android.util.Base64
 import com.pink.hami.melon.dual.option.R
+import com.pink.hami.melon.dual.option.app.adload.GetAdData
 
 object DulaShowDataUtils {
     fun String.getDualImage():  Int {
@@ -33,8 +34,9 @@ object DulaShowDataUtils {
         }
     }
     fun setSkServerData(profile: Profile, bestData: VpnServiceBean): Profile {
-        DualContext.localStorage.vpn_city = bestData.city
-        DualContext.localStorage.vpn_ip_dualLoad =  bestData.ip
+        GetAdData.nowLoadIpZone=bestData.ip
+        GetAdData.nowLoadCityZone = bestData.city
+
         profile.name = bestData.country_name + "-" + bestData.city
         profile.host = bestData.ip
         profile.password = bestData.user_pwd

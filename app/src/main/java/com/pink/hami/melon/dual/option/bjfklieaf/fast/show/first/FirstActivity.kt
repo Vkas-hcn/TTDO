@@ -126,6 +126,7 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
         jobOpenTdo?.cancel()
         jobOpenTdo = null
         jobOpenTdo = lifecycleScope.launch {
+            delay(2000)
             try {
                 withTimeout(10000L) {
                     while (isActive) {

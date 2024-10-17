@@ -63,13 +63,13 @@ object OPenSpUtils {
     }
 
     fun brand(builder: VpnService.Builder, myPackageName: String) {
-        if(getFlowData()==true){
-            (listOf(myPackageName) + listGmsPackages())
-                .iterator()
-                .forEachRemaining {
-                    runCatching { builder.addDisallowedApplication(it) }
-                }
-        }
+//        if(getFlowData()==true){
+//            (listOf(myPackageName) + listGmsPackages())
+//                .iterator()
+//                .forEachRemaining {
+//                    runCatching { builder.addDisallowedApplication(it) }
+//                }
+//        }
     }
     private fun listGmsPackages(): List<String> {
         return listOf(

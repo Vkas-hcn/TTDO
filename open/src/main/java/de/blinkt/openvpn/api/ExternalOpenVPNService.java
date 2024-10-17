@@ -282,13 +282,13 @@ public class ExternalOpenVPNService extends Service implements StateListener {
         public void registerStatusCallback(IOpenVPNStatusCallback cb)
                 throws RemoteException {
             mExtAppDb.checkOpenVPNPermission(getPackageManager());
-
             if (cb != null) {
-                cb.newStatus(mMostRecentState.vpnUUID, mMostRecentState.state,
-                        mMostRecentState.logmessage, mMostRecentState.level.name());
+                if (mMostRecentState.state.equals("CONNECTED")) {
+                    cb.newStatus(mMostRecentState.vpnUUID, mMostRecentState.state,
+                            mMostRecentState.logmessage, mMostRecentState.level.name());
+                }
                 mCallbacks.register(cb);
             }
-
 
         }
 

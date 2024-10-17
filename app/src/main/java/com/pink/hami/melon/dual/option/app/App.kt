@@ -8,10 +8,16 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.Process
 import android.provider.Settings
 import android.util.Log
 import android.webkit.WebView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.OnLifecycleEvent
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.adjust.sdk.Adjust
 import com.adjust.sdk.AdjustConfig
 import com.android.installreferrer.api.InstallReferrerClient
@@ -30,6 +36,7 @@ import com.pink.hami.melon.dual.option.app.adload.GetAdData
 import com.pink.hami.melon.dual.option.utils.DualONlineFun
 import com.pink.hami.melon.dual.option.utils.LocalStorage
 import de.blinkt.openvpn.OPenSpUtils
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -37,7 +44,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-class App : Application(), Application.ActivityLifecycleCallbacks {
+class App : Application(), Application.ActivityLifecycleCallbacks, LifecycleObserver {
     private var isInBackground = false
     private var lastBackgroundTime: Long = 0
     var adActivity: Activity? = null
@@ -67,6 +74,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         OPenSpUtils.initOpenContext(this)
         registerActivityLifecycleCallbacks(this)
         this.registerActivityLifecycleCallbacks(this)
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         iniApp()
         val myPid = Process.myPid()
         val activityManager =
@@ -94,6 +102,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
             }
         }
     }
+
     private fun isMainProcess(context: Context): Boolean {
         val pid = Process.myPid()
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -131,7 +140,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
     override fun onActivityStarted(activity: Activity) {
         if (activity is AdActivity) {
             adActivity = activity
-        }else{
+        } else {
             top_activity_name = activity.javaClass.simpleName
         }
     }
@@ -153,10 +162,8 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
     }
 
     override fun onActivityStopped(activity: Activity) {
-        if (isAppInBackground(activity)) {
-            isInBackground = true
-            lastBackgroundTime = System.currentTimeMillis()
-        }
+
+
     }
 
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
@@ -166,20 +173,17 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
     override fun onActivityDestroyed(activity: Activity) {
     }
 
-    private fun isAppInBackground(activity: Activity): Boolean {
-        val am = activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        val runningProcesses = am.runningAppProcesses
-        for (processInfo in runningProcesses) {
-            if (processInfo.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-                for (d in processInfo.pkgList) {
-                    if (d == activity.packageName) {
-                        return false
-                    }
-                }
-            }
-        }
-        return true
+    @OnLifecycleEvent(Lifecycle.Event.ON_START)
+    fun onEnterForeground() {
     }
+
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+    fun onEnterBackground() {
+        lastBackgroundTime = System.currentTimeMillis()
+        isInBackground = true
+    }
+
 
     private fun restartApp(activity: Activity) {
         if (adActivity != null) {
@@ -192,7 +196,6 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
     }
 
 
-
     private fun haveRefDataChangingBean(context: Context) {
 
         runCatching {
@@ -203,11 +206,11 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
                         InstallReferrerClient.InstallReferrerResponse.OK -> {
                             val installReferrer =
                                 referrerClient.installReferrer.installReferrer ?: ""
-                                runCatching {
-                                    referrerClient?.installReferrer?.run {
-                                        DualONlineFun.emitInstallData(context, this)
-                                    }
-                                }.exceptionOrNull()
+                            runCatching {
+                                referrerClient?.installReferrer?.run {
+                                    DualONlineFun.emitInstallData(context, this)
+                                }
+                            }.exceptionOrNull()
                         }
                     }
                     referrerClient.endConnection()
@@ -219,6 +222,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         }.onFailure { e ->
         }
     }
+
     @SuppressLint("HardwareIds")
     private fun initAdJust(application: Application) {
         Adjust.addSessionCallbackParameter(

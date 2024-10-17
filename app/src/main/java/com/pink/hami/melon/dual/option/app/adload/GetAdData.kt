@@ -23,6 +23,15 @@ object GetAdData {
         BACK_RESULT
     }
 
+    var guideLoadIp = ""
+    var homeLoadIp = ""
+    var endLoadIp = ""
+    var connectLoadIp = ""
+    var backServiceLoadIp = ""
+    var backResultLoadIp = ""
+
+    var nowLoadIpZone = ""
+    var nowLoadCityZone = ""
     const val ad_key = "oee"
     const val control_key = "pew"
     fun getAdData(): AdListBean {
@@ -103,6 +112,24 @@ object GetAdData {
             DualContext.localStorage.locak_up = true
         }
         return type
+    }
+
+    fun isShowAdOc(): Boolean {
+        return !App.vpnLink && !getAdBlackData()
+    }
+
+    fun getConnectTime(): Pair<Int, Int> {
+        // 默认值
+        val default = 15
+        val num = getControlData().ctime ?: ""
+        // 分割字符串
+        val parts = num.split("&")
+        // 检查分割结果并尝试转换为数字，转换失败则使用默认值
+        val firstNumber = parts.getOrNull(0)?.toIntOrNull() ?: default
+        val secondNumber = parts.getOrNull(1)?.toIntOrNull() ?: default
+
+        // 返回解析后的两个数字
+        return Pair(firstNumber, secondNumber)
     }
 
     class getAdC : ViewOutlineProvider() {

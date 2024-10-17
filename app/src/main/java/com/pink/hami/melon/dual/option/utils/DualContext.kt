@@ -10,7 +10,9 @@ import com.pink.hami.melon.dual.option.bean.VpnServiceBean
 import com.pink.hami.melon.dual.option.utils.DualONlineFun.landingRemoteData
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-
+import com.google.gson.JsonSyntaxException
+import com.google.gson.stream.JsonReader
+import java.io.StringReader
 object DualContext {
     const val web_dualLoadile_url = "https://www.baidu.com/"
     val put_data_url: String
@@ -19,8 +21,6 @@ object DualContext {
     const val isDualConnected = "isDualConnected"
     const val cuDualConnected = "cuDualConnected"
 
-    var gidData = ""
-    @SuppressLint("StaticFieldLeak")
     val localStorage = LocalStorage(App.getAppContext())
 
     init {
@@ -44,28 +44,41 @@ object DualContext {
         }
     }
 
-   fun isHaveServeData(): Boolean {
-       val allData = getAllVpnListData()
+    private val gson = Gson()
+
+    @Synchronized
+    fun isHaveServeData(): Boolean {
+        val allData = getAllVpnListData()
         return if (allData == null) {
-            fetchOnlineDataIfNecessary()
+            if (!fetchOnlineDataIfNecessary()) {
+                // 如果 fetchOnlineDataIfNecessary() 失败，返回 false
+                return false
+            }
             false
         } else {
-            val serviceData = Gson().fromJson<VpnServiceBean>(
-                localStorage.check_service,
-                object : TypeToken<VpnServiceBean?>() {}.type
-            )
-            val skVpnServiceBean: VpnServiceBean = if (serviceData.best_dualLoad) {
-                getFastVpn() ?: VpnServiceBean()
-            } else {
-                serviceData
+            try {
+                val serviceData = gson.fromJson<VpnServiceBean>(
+                    localStorage.check_service,
+                    object : TypeToken<VpnServiceBean?>() {}.type
+                )
+                val skVpnServiceBean: VpnServiceBean = if (serviceData?.best_dualLoad == true) {
+                    getFastVpn() ?: serviceData ?: VpnServiceBean()
+                } else {
+                    serviceData ?: VpnServiceBean()
+                }
+                localStorage.check_service = gson.toJson(skVpnServiceBean)
+                true
+            } catch (e: Exception) {
+                // 处理异常，记录日志
+                e.printStackTrace()
+                false
             }
-            localStorage.check_service = Gson().toJson(skVpnServiceBean)
-            true
         }
     }
 
-    private fun fetchOnlineDataIfNecessary() {
+    private fun fetchOnlineDataIfNecessary(): Boolean {
         landingRemoteData()
+        return true
     }
 
     fun getAllVpnListData(): MutableList<VpnServiceBean>? {
@@ -89,14 +102,14 @@ object DualContext {
         vpnList.addAll(vpnListData)
     }
 
-    private fun getVpnList(): MutableList<VpnServiceBean>? {
+    private fun getVpnList2(): MutableList<VpnServiceBean>? {
         return runCatching {
             val listType = object : TypeToken<DualFFFFFFBean>() {}.type
             Gson().fromJson<DualFFFFFFBean>(localStorage.vpn_online_data_dualLoad, listType)?.data?.server_list
         }.getOrNull()
     }
 
-    fun getFastVpn(): VpnServiceBean? {
+    fun getFastVpn2(): VpnServiceBean? {
         return runCatching {
             Gson().fromJson(localStorage.vpn_online_data_dualLoad, DualFFFFFFBean::class.java)?.data?.smart_list?.random()
         }.onSuccess { smartBean ->
@@ -104,10 +117,46 @@ object DualContext {
         }.getOrNull()
     }
 
+
+    private fun parseVpnData(): DualFFFFFFBean? {
+        val jsonString = localStorage.vpn_online_data_dualLoad
+        if (jsonString.isEmpty()) {
+            return null
+        }
+        return try {
+            Gson().fromJson(jsonString, DualFFFFFFBean::class.java)
+        } catch (e: JsonSyntaxException) {
+            // 记录异常信息
+            Log.e("VpnService", "Failed to parse JSON: ${e.message}")
+            null
+        }
+    }
+
+    private fun getVpnList(): MutableList<VpnServiceBean>? {
+        return runCatching {
+            parseVpnData()?.data?.server_list
+        }.getOrNull()
+    }
+
+    fun getFastVpn(): VpnServiceBean? {
+        return runCatching {
+            val smartList = parseVpnData()?.data?.smart_list
+            if (smartList.isNullOrEmpty()) {
+                null
+            } else {
+                smartList.random()
+            }
+        }.onSuccess { smartBean ->
+            configureFastVpnBean(smartBean)
+        }.getOrNull()
+    }
+
+
     private fun configureFastVpnBean(smartBean: VpnServiceBean?) {
         smartBean?.apply {
             best_dualLoad = true
             country_name = "Fast Server"
         }
     }
+
 }

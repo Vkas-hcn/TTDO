@@ -1,12 +1,16 @@
 package com.pink.hami.melon.dual.option.utils.net
 
 import android.content.Context
+import com.pink.hami.melon.dual.option.BuildConfig
 import com.pink.hami.melon.dual.option.utils.DualContext
 import java.util.Locale
 
 class IpChecker() {
 
     fun checkIp(): Boolean {
+        if (BuildConfig.DEBUG) {
+            return false
+        }
         val ipData = fetchIpData()
         return isIllegalIp(ipData)
     }

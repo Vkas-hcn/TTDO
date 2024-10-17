@@ -3,7 +3,9 @@ package com.pink.hami.melon.dual.option.funutils
 import android.app.AlertDialog
 import android.content.DialogInterface
 import android.graphics.Color
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.bean.VpnServiceBean
 import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.list.ListActivity
@@ -13,10 +15,13 @@ import com.google.gson.Gson
 import com.pink.hami.melon.dual.option.R
 import com.pink.hami.melon.dual.option.bjfklieaf.fast.show.list.VerticalSpaceItemDecoration
 import com.pink.hami.melon.dual.option.utils.DualONlineFun
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 object ListFunHelp {
     lateinit var allVpnListData: MutableList<VpnServiceBean>
-     var listServiceAdapter: ListServiceAdapter?=null
+    var listServiceAdapter: ListServiceAdapter? = null
     var ecVpnServiceBeanList: MutableList<VpnServiceBean> = ArrayList()
     lateinit var checkSkVpnServiceBean: VpnServiceBean
     lateinit var checkSkVpnServiceBeanClick: VpnServiceBean
@@ -60,7 +65,8 @@ object ListFunHelp {
     ) {
         getAllServer()
         activity.binding.rvList.adapter = listServiceAdapter
-        val verticalSpaceHeight = activity.resources.getDimensionPixelSize(R.dimen.recycler_view_item_spacing)
+        val verticalSpaceHeight =
+            activity.resources.getDimensionPixelSize(R.dimen.recycler_view_item_spacing)
         activity.binding.rvList.layoutManager =
             androidx.recyclerview.widget.LinearLayoutManager(activity)
         activity.binding.rvList.addItemDecoration(VerticalSpaceItemDecoration(verticalSpaceHeight))
@@ -101,13 +107,39 @@ object ListFunHelp {
 
 
     fun returnToHomePage(activity: ListActivity) {
-        DualONlineFun.emitPointData("v20proxy")
-        if (App.adManagerBackService.hasAdDataForPosition()) {
-            App.adManagerBackService.showAd(activity) {
-                activity.finish()
-            }
-        } else {
+        if (App.adManagerBackService.canShowAd() == 0) {
             activity.finish()
+            return
+        }
+        activity.binding.dataLoading = true
+        App.adManagerBackService.loadAd()
+        DualONlineFun.emitPointData("v20proxy")
+        activity.lifecycleScope.launch {
+            val startTime = System.currentTimeMillis()
+            var elapsedTime: Long
+            try {
+                while (isActive) {
+                    elapsedTime = System.currentTimeMillis() - startTime
+                    if (elapsedTime >= 4000L) {
+                        Log.e("TAG", "连接超时")
+                        activity.finish()
+                        activity.binding.dataLoading = false
+                        break
+                    }
+
+                    if (App.adManagerBackService.canShowAd() == 1) {
+                        App.adManagerBackService.showAd(activity) {
+                            activity.finish()
+                            activity.binding.dataLoading = false
+                        }
+                        break
+                    }
+                    delay(500L)
+                }
+            } catch (e: Exception) {
+                activity.finish()
+                activity.binding.dataLoading = false
+            }
         }
     }
 
