@@ -28,6 +28,7 @@ object DualONlineFun {
     val smileNetManager = DualOnlineFac(App.getAppContext())
 
     suspend fun getOnlyIp() = withContext(Dispatchers.IO) {
+        if(App.vpnLink){return@withContext}
         fetchIpFromUrl("https://ifconfig.me/ip") { content ->
             DualContext.localStorage.ip_lo_dualLoad = content
         }

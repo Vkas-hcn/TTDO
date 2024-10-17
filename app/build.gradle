@@ -16,12 +16,12 @@ stringfog {
 }
 android {
     namespace 'com.pink.hami.melon.dual.option'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.pink.hami.melon.dual.option"
         minSdk 24
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0.0"
 
