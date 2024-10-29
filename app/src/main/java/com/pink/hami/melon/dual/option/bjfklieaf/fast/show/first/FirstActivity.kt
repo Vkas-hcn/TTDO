@@ -86,7 +86,6 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
 
     private suspend fun performNetworkTasks() {
         withContext(Dispatchers.IO) {
-            DualONlineFun.getAdminData(this@FirstActivity)
             DualONlineFun.landingRemoteData()
             DualONlineFun.getLoadIp()
             DualONlineFun.getLoadOthIp()
@@ -252,33 +251,37 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
     }
 
     private fun haveRefDataChangingBean(context: Context) {
-        runCatching {
-            val timeStart = System.currentTimeMillis()
-            val referrerClient = InstallReferrerClient.newBuilder(context).build()
-            referrerClient.startConnection(object : InstallReferrerStateListener {
-                override fun onInstallReferrerSetupFinished(p0: Int) {
-                    when (p0) {
-                        InstallReferrerClient.InstallReferrerResponse.OK -> {
-                            val installReferrer =
-                                referrerClient.installReferrer.installReferrer ?: ""
-                            DualContext.localStorage.ref_data = installReferrer
-                            val timeEnd = ((System.currentTimeMillis() - timeStart) / 1000).toInt()
-                            DualONlineFun.emitPointData("v25proxy", "time", timeEnd)
-                            runCatching {
-                                referrerClient?.installReferrer?.run {
-                                    DualONlineFun.emitInstallData(context, this)
+            runCatching {
+                val timeStart = System.currentTimeMillis()
+                val referrerClient = InstallReferrerClient.newBuilder(context).build()
+                referrerClient.startConnection(object : InstallReferrerStateListener {
+                    override fun onInstallReferrerSetupFinished(p0: Int) {
+                        when (p0) {
+                            InstallReferrerClient.InstallReferrerResponse.OK -> {
+                                val installReferrer =
+                                    referrerClient.installReferrer.installReferrer ?: ""
+                                DualContext.localStorage.ref_data = installReferrer
+                                lifecycleScope.launch {
+                                    DualONlineFun.getAdminData(this@FirstActivity)
                                 }
-                            }.exceptionOrNull()
+                                val timeEnd = ((System.currentTimeMillis() - timeStart) / 1000).toInt()
+                                DualONlineFun.emitPointData("v25proxy", "time", timeEnd)
+                                runCatching {
+                                    referrerClient?.installReferrer?.run {
+                                        DualONlineFun.emitInstallData(context, this)
+                                    }
+                                }.exceptionOrNull()
+                            }
                         }
+                        referrerClient.endConnection()
                     }
-                    referrerClient.endConnection()
-                }
 
-                override fun onInstallReferrerServiceDisconnected() {
-                }
-            })
-        }.onFailure { e ->
-        }
+                    override fun onInstallReferrerServiceDisconnected() {
+                    }
+                })
+            }.onFailure { e ->
+            }
+
     }
 
 }

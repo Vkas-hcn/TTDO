@@ -17,6 +17,9 @@ import android.util.Base64
 import android.util.Log
 import com.android.volley.NetworkResponse
 import com.android.volley.toolbox.HttpHeaderParser
+import java.io.*
+import java.net.HttpURLConnection
+import java.net.URL
 
 class DualOnlineFac(private val context: Context) {
     private val requestQueue: RequestQueue by lazy {
@@ -72,14 +75,11 @@ class DualOnlineFac(private val context: Context) {
             }
 
         )
-
-        // Set a custom retry policy (5 seconds timeout, 2 retries, exponential backoff multiplier 2.0)
         request.retryPolicy = DefaultRetryPolicy(
             5000, // timeout in milliseconds
             2, // number of retries
             2.0f // backoff multiplier
         )
-
         requestQueue.add(request)
     }
 
@@ -138,6 +138,7 @@ class DualOnlineFac(private val context: Context) {
         )
         Volley.newRequestQueue(context).add(request)
     }
+
     private fun xorWithTimestamp(text: String, timestamp: String): String {
         val cycleKey = timestamp.toCharArray()
         val keyLength = cycleKey.size
