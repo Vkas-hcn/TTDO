@@ -199,7 +199,7 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
     }
 
     private fun initFaceBook() {
-        val data = GetAdData.getControlData().aaxxz
+        val data = GetAdData.getControlData().aaxxz?:""
         if (data.isBlank()) {
             return
         }

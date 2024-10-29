@@ -297,7 +297,7 @@ object DualONlineFun {
         )
         adRevenue.setAdRevenueNetwork(responseInfo.mediationAdapterClassName)
         Adjust.trackAdRevenue(adRevenue)
-        val data = GetAdData.getControlData().aaxxz
+        val data = GetAdData.getControlData().aaxxz?:""
         if (!BuildConfig.DEBUG && data.isNotBlank()) {
             AppEventsLogger.newLogger(App.getAppContext()).logPurchase(
                 (adValue.valueMicros / 1000000.0).toBigDecimal(), Currency.getInstance("USD")

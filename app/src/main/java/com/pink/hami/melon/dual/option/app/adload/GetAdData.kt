@@ -61,7 +61,8 @@ object GetAdData {
             } else {
                 return Gson().fromJson(localControlBean, AdConBean::class.java)
             }
-        }.getOrNull() ?: return Gson().fromJson(localControlBean, AdConBean::class.java)
+        }.getOrNull() ?:
+        return Gson().fromJson(localControlBean, AdConBean::class.java)
     }
 
 
