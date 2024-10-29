@@ -31,6 +31,7 @@ import com.google.android.gms.ads.MobileAds
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
+import com.pink.hami.melon.dual.option.BuildConfig
 import com.pink.hami.melon.dual.option.app.adload.AdManager
 import com.pink.hami.melon.dual.option.app.adload.GetAdData
 import com.pink.hami.melon.dual.option.utils.DualONlineFun
@@ -65,7 +66,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks, LifecycleObse
         lateinit var adManagerBackResult: AdManager
 
         var top_activity_name: String? = null
-
+        var appTimeStart = 0L
     }
 
     override fun onCreate() {
@@ -75,39 +76,16 @@ class App : Application(), Application.ActivityLifecycleCallbacks, LifecycleObse
         registerActivityLifecycleCallbacks(this)
         this.registerActivityLifecycleCallbacks(this)
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
+        MobileAds.initialize(this) {}
+        Firebase.initialize(this)
+        FirebaseApp.initializeApp(this)
         iniApp()
-        val myPid = Process.myPid()
-        val activityManager =
-            this.getSystemService(ACTIVITY_SERVICE) as ActivityManager
-        val processInfoList = activityManager.runningAppProcesses
-        val packageName = this.packageName
-        for (info in processInfoList) {
-            if (info!!.pid == myPid && packageName == info.processName) {
-                MobileAds.initialize(this) {}
-                Firebase.initialize(this)
-                FirebaseApp.initializeApp(this)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    if (this.packageName != getProcessName()) {
-                        WebView.setDataDirectorySuffix(getProcessName())
-                    }
-                }
-                initAdJust(this)
-                adManagerOpen = AdManager.getInstance(this, GetAdData.AdWhere.GUIDE)
-                adManagerHome = AdManager.getInstance(this, GetAdData.AdWhere.HOME)
-                adManagerEnd = AdManager.getInstance(this, GetAdData.AdWhere.END)
-                adManagerConnect = AdManager.getInstance(this, GetAdData.AdWhere.CONNECT)
-                adManagerBackService = AdManager.getInstance(this, GetAdData.AdWhere.BACK_SERVICE)
-                adManagerBackResult = AdManager.getInstance(this, GetAdData.AdWhere.BACK_RESULT)
-
-            }
-        }
     }
 
     private fun isMainProcess(context: Context): Boolean {
         val pid = Process.myPid()
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val runningApps = activityManager.runningAppProcesses ?: return false
-
         val packageName = context.packageName
         for (appProcess in runningApps) {
             if (appProcess.pid == pid && packageName == appProcess.processName) {
@@ -120,6 +98,8 @@ class App : Application(), Application.ActivityLifecycleCallbacks, LifecycleObse
 
     private fun iniApp() {
         if (isMainProcess(this)) {
+            Log.e("TAG", "iniApp: main")
+            appTimeStart = System.currentTimeMillis()
             instance = this
             val data = DualContext.localStorage.uuid_dualLoadile
             val id = DualContext.localStorage.android_id_data
@@ -129,7 +109,22 @@ class App : Application(), Application.ActivityLifecycleCallbacks, LifecycleObse
             if (id.isBlank()) {
                 DualContext.localStorage.android_id_data = UUID.randomUUID().toString()
             }
-            haveRefDataChangingBean(this)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                if (this.packageName != getProcessName()) {
+                    try {
+                        WebView.setDataDirectorySuffix(getProcessName())
+                    } catch (e: Exception) {
+
+                    }
+                }
+            }
+            initAdJust(this)
+            adManagerOpen = AdManager.getInstance(this, GetAdData.AdWhere.GUIDE)
+            adManagerHome = AdManager.getInstance(this, GetAdData.AdWhere.HOME)
+            adManagerEnd = AdManager.getInstance(this, GetAdData.AdWhere.END)
+            adManagerConnect = AdManager.getInstance(this, GetAdData.AdWhere.CONNECT)
+            adManagerBackService = AdManager.getInstance(this, GetAdData.AdWhere.BACK_SERVICE)
+            adManagerBackResult = AdManager.getInstance(this, GetAdData.AdWhere.BACK_RESULT)
         }
     }
 
@@ -196,41 +191,22 @@ class App : Application(), Application.ActivityLifecycleCallbacks, LifecycleObse
     }
 
 
-    private fun haveRefDataChangingBean(context: Context) {
-
-        runCatching {
-            val referrerClient = InstallReferrerClient.newBuilder(context).build()
-            referrerClient.startConnection(object : InstallReferrerStateListener {
-                override fun onInstallReferrerSetupFinished(p0: Int) {
-                    when (p0) {
-                        InstallReferrerClient.InstallReferrerResponse.OK -> {
-                            val installReferrer =
-                                referrerClient.installReferrer.installReferrer ?: ""
-                            runCatching {
-                                referrerClient?.installReferrer?.run {
-                                    DualONlineFun.emitInstallData(context, this)
-                                }
-                            }.exceptionOrNull()
-                        }
-                    }
-                    referrerClient.endConnection()
-                }
-
-                override fun onInstallReferrerServiceDisconnected() {
-                }
-            })
-        }.onFailure { e ->
-        }
-    }
-
     @SuppressLint("HardwareIds")
     private fun initAdJust(application: Application) {
         Adjust.addSessionCallbackParameter(
             "customer_user_id",
-            Settings.Secure.getString(application.contentResolver, Settings.Secure.ANDROID_ID)
+            DualContext.localStorage.android_id_data
         )
-        val appToken = "ih2pm2dr3k74"
-        val environment: String = AdjustConfig.ENVIRONMENT_SANDBOX
+        val appToken: String
+        val environment: String
+
+        if (BuildConfig.DEBUG) {
+            appToken = "ih2pm2dr3k74"
+            environment = AdjustConfig.ENVIRONMENT_SANDBOX
+        } else {
+            appToken = "om1kgba7o1ds"
+            environment = AdjustConfig.ENVIRONMENT_PRODUCTION
+        }
         val config = AdjustConfig(application, appToken, environment)
         config.needsCost = true
         config.setOnAttributionChangedListener { attribution ->

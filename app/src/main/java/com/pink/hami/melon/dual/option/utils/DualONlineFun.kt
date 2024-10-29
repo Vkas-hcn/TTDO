@@ -16,19 +16,26 @@ import com.google.android.gms.ads.ResponseInfo
 import com.pink.hami.melon.dual.option.BuildConfig
 import com.pink.hami.melon.dual.option.app.App
 import com.pink.hami.melon.dual.option.app.adload.AdBean
+import com.pink.hami.melon.dual.option.app.adload.GetAdData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.net.URL
 import java.util.Currency
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 object DualONlineFun {
     val smileNetManager = DualOnlineFac(App.getAppContext())
 
     suspend fun getOnlyIp() = withContext(Dispatchers.IO) {
-        if(App.vpnLink){return@withContext}
+        if (App.vpnLink) {
+            return@withContext
+        }
         fetchIpFromUrl("https://ifconfig.me/ip") { content ->
             DualContext.localStorage.ip_lo_dualLoad = content
         }
@@ -188,7 +195,6 @@ object DualONlineFun {
                     override fun onFailure(error: String) {
                         Log.e("TAG", "install事件上报-失败=$error")
                         DualContext.localStorage.up_install_thing = false
-
                     }
                 })
         } catch (e: Exception) {
@@ -291,12 +297,90 @@ object DualONlineFun {
         )
         adRevenue.setAdRevenueNetwork(responseInfo.mediationAdapterClassName)
         Adjust.trackAdRevenue(adRevenue)
-        if (!BuildConfig.DEBUG) {
+        val data = GetAdData.getControlData().aaxxz
+        if (!BuildConfig.DEBUG && data.isNotBlank()) {
             AppEventsLogger.newLogger(App.getAppContext()).logPurchase(
                 (adValue.valueMicros / 1000000.0).toBigDecimal(), Currency.getInstance("USD")
             )
         } else {
             Log.d("TBA", "purchase打点--value=${adValue.valueMicros}")
+        }
+    }
+
+
+    suspend fun getAdminData(context: Context) = withContext(Dispatchers.IO) {
+        val params = PutDataUtils.adminData()
+        Log.e("TAG", "getAdminData: -params-$params")
+
+        val maxRetries = 2
+        var attempt = 0
+        val timeStart = System.currentTimeMillis()
+        val appTimeEnd = ((System.currentTimeMillis() - App.appTimeStart) / 1000).toInt()
+        emitPointData("v26proxy", "time", appTimeEnd)
+        while (attempt <= maxRetries) {
+            try {
+                val response = postAdminDataWithRetry(
+                    context,
+                    "https://prt.writeonlinepennetproxy.com/api/jnkn/",
+                    params
+                )
+                val timeEnd = ((System.currentTimeMillis() - timeStart) / 1000).toInt()
+                emitPointData("v27proxy", "time", timeEnd)
+                DualContext.localStorage.adminBcs = getAdminBcsData(response)
+                DualContext.localStorage.adminMaser = getAdminMaserData(response)
+                postV24proxyData()
+                Log.e(
+                    "TAG",
+                    "getAdminData-Success: $response---${DualContext.localStorage.adminBcs}----${DualContext.localStorage.adminMaser}"
+                )
+                break // 请求成功，跳出循环
+
+            } catch (e: Exception) {
+                Log.e("TAG", "getAdminData-Exception: $e")
+                if (attempt >= maxRetries) {
+                    Log.e("TAG", "getAdminData-FinalFailure: Max retries reached.")
+                }
+                attempt++ // 请求失败，进行下一次尝试
+            }
+        }
+    }
+
+    private suspend fun postAdminDataWithRetry(context: Context, url: String, params: Any): String =
+        suspendCoroutine { continuation ->
+            smileNetManager.postAdminData(
+                context,
+                url,
+                params,
+                object : DualOnlineFac.Callback {
+                    override fun onSuccess(response: String) {
+                        continuation.resume(response)
+                    }
+
+                    override fun onFailure(error: String) {
+                        continuation.resumeWithException(Exception(error))
+                    }
+                }
+            )
+        }
+
+
+    fun getAdminBcsData(jsonString: String): String {
+        val outerJson = JSONObject(jsonString)
+        val confString = outerJson.getJSONObject("dVNXoeC").getString("conf")
+        val confJson = JSONObject(confString)
+        return confJson.getString("bcs")
+    }
+
+    fun getAdminMaserData(jsonString: String): String {
+        val outerJson = JSONObject(jsonString)
+        val confString = outerJson.getJSONObject("dVNXoeC").getString("conf")
+        val confJson = JSONObject(confString)
+        return confJson.getString("maser")
+    }
+
+    fun postV24proxyData() {
+        if (GetAdData.getAdminMaserData()) {
+            emitPointData("v24proxy")
         }
     }
 }

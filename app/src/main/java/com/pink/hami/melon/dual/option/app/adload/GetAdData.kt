@@ -107,11 +107,20 @@ object GetAdData {
                 true
             }
         }
-        if (type && !DualContext.localStorage.locak_up) {
-            DualONlineFun.emitPointData("v1proxy")
-            DualContext.localStorage.locak_up = true
-        }
+
         return type
+    }
+
+    fun getAdminData(): Boolean {
+        return DualContext.localStorage.adminBcs == "2"
+    }
+
+    fun getAdminMaserData(): Boolean {
+        return DualContext.localStorage.adminMaser == "1"
+    }
+
+    fun isShowAdOcMain(): Boolean {
+        return !App.vpnLink && !getAdBlackData() && !getAdminData()
     }
 
     fun isShowAdOc(): Boolean {

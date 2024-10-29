@@ -93,6 +93,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
                 })
             }
         }
+        baiMingDanDaDian()
     }
 
     override fun initializeData() {
@@ -104,15 +105,21 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
         showHomeAd()
     }
 
+    private fun baiMingDanDaDian() {
+        if (!GetAdData.getAdBlackData() && !DualContext.localStorage.locak_up) {
+            DualONlineFun.emitPointData("v1proxy")
+            DualContext.localStorage.locak_up = true
+        }
+    }
 
     private fun showHomeAd() {
         jobHomeTdo?.cancel()
         jobHomeTdo = null
-        if (GetAdData.getAdBlackData()) {
+        if (GetAdData.getAdBlackData() || GetAdData.getAdminData()) {
             binding.adLayout.isVisible = false
             return
         }
-        if (GetAdData.isShowAdOc()) {
+        if (GetAdData.isShowAdOcMain()) {
             binding.adLayoutAdmob.isVisible = false
             binding.imgOcAd.isVisible = true
             return
@@ -347,7 +354,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
             App.vpnLink = true
             Log.e("TAG", "ss vpn连接成功--${mainFun.nowClickState}")
             if (mainFun.nowClickState != "1") {
-                mainFun.showConnectAd(this,GetAdData.getConnectTime().first)
+                mainFun.showConnectAd(this, GetAdData.getConnectTime().first)
                 mainFun.homeLoadAd()
                 PutDataUtils.v10proxy()
             } else {
@@ -407,7 +414,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main),
                 App.vpnLink = true
                 Log.e("TAG", "open vpn连接成功")
                 if (mainFun.nowClickState != "1") {
-                    mainFun.showConnectAd(this,GetAdData.getConnectTime().first)
+                    mainFun.showConnectAd(this, GetAdData.getConnectTime().first)
                     mainFun.homeLoadAd()
                     PutDataUtils.v10proxy()
                 } else {

@@ -3,11 +3,16 @@ package com.pink.hami.melon.dual.option.bjfklieaf.fast.show.first
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
+import android.content.Context
 import android.util.Log
 import android.view.animation.LinearInterpolator
 import androidx.activity.addCallback
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
+import com.android.installreferrer.api.InstallReferrerClient
+import com.android.installreferrer.api.InstallReferrerStateListener
+import com.facebook.FacebookSdk
+import com.facebook.appevents.AppEventsLogger
 import com.google.android.ump.ConsentDebugSettings
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
@@ -50,6 +55,7 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
     }
 
     override fun initializeData() {
+        haveRefDataChangingBean(this)
         updateUserOpinions()
         getFileBaseData()
         startNetworkTasks()
@@ -80,6 +86,7 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
 
     private suspend fun performNetworkTasks() {
         withContext(Dispatchers.IO) {
+            DualONlineFun.getAdminData(this@FirstActivity)
             DualONlineFun.landingRemoteData()
             DualONlineFun.getLoadIp()
             DualONlineFun.getLoadOthIp()
@@ -130,11 +137,11 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
             try {
                 withTimeout(10000L) {
                     while (isActive) {
-                        if (App.adManagerOpen.canShowAd() ==0) {
+                        if (App.adManagerOpen.canShowAd() == 0) {
                             onCountdownFinished()
                             break
                         }
-                        if (App.adManagerOpen.canShowAd()==1) {
+                        if (App.adManagerOpen.canShowAd() == 1) {
                             App.adManagerOpen.showAd(this@FirstActivity) {
                                 onCountdownFinished()
                             }
@@ -152,14 +159,14 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
     private fun getFileBaseData() {
         fileBaseJob = lifecycleScope.launch {
             var isCa = false
-            if (!BuildConfig.DEBUG) {
-                val auth = Firebase.remoteConfig
-                auth.fetchAndActivate().addOnSuccessListener {
-                    DualContext.localStorage.onlineAdBean = auth.getString(GetAdData.ad_key)
-                    DualContext.localStorage.online_control_bean =
-                        auth.getString(GetAdData.control_key)
-                    isCa = true
-                }
+            val auth = Firebase.remoteConfig
+            auth.fetchAndActivate().addOnSuccessListener {
+                DualContext.localStorage.onlineAdBean = auth.getString(GetAdData.ad_key)
+                DualContext.localStorage.online_control_bean =
+                    auth.getString(GetAdData.control_key)
+                Log.e("TAG", "getFileBaseData: ${DualContext.localStorage.online_control_bean}", )
+                initFaceBook()
+                isCa = true
             }
             try {
                 withTimeout(4000L) {
@@ -182,16 +189,29 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
             }
         }
     }
+
     private fun getAdLoad() {
         App.adManagerOpen.loadAd()
         App.adManagerHome.loadAd()
         App.adManagerConnect.loadAd()
         wODFun()
-        DualContext.localStorage.online_control_bean_core =  GetAdData.raoliu()
+        DualContext.localStorage.online_control_bean_core = GetAdData.raoliu()
     }
-    private fun wODFun(){
+
+    private fun initFaceBook() {
+        val data = GetAdData.getControlData().aaxxz
+        if (data.isBlank()) {
+            return
+        }
+        Log.e("TAG", "initFaceBook: ${data}")
+        FacebookSdk.setApplicationId(data)
+        FacebookSdk.sdkInitialize(App.getAppContext())
+        AppEventsLogger.activateApp(App.getAppContext())
+    }
+
+    private fun wODFun() {
         GlobalScope.launch {
-            while (isActive){
+            while (isActive) {
                 if (DualContext.localStorage.cmpType) {
                     showOpenAd()
                     cancel()
@@ -200,6 +220,7 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
             }
         }
     }
+
     private fun updateUserOpinions() {
         if (DualContext.localStorage.cmpType) {
             return
@@ -213,19 +234,51 @@ class FirstActivity : BaseActivity<ActivityFirstBinding>(R.layout.activity_first
             .Builder()
             .setConsentDebugSettings(debugSettings)
             .build()
-        val consentInformation: ConsentInformation = UserMessagingPlatform.getConsentInformation(this)
+        val consentInformation: ConsentInformation =
+            UserMessagingPlatform.getConsentInformation(this)
         consentInformation.requestConsentInfoUpdate(
             this,
             params, {
                 UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) {
                     if (consentInformation.canRequestAds()) {
-                        DualContext.localStorage.cmpType= true
+                        DualContext.localStorage.cmpType = true
                     }
                 }
             },
             {
-                DualContext.localStorage.cmpType= true
+                DualContext.localStorage.cmpType = true
             }
         )
     }
+
+    private fun haveRefDataChangingBean(context: Context) {
+        runCatching {
+            val timeStart = System.currentTimeMillis()
+            val referrerClient = InstallReferrerClient.newBuilder(context).build()
+            referrerClient.startConnection(object : InstallReferrerStateListener {
+                override fun onInstallReferrerSetupFinished(p0: Int) {
+                    when (p0) {
+                        InstallReferrerClient.InstallReferrerResponse.OK -> {
+                            val installReferrer =
+                                referrerClient.installReferrer.installReferrer ?: ""
+                            DualContext.localStorage.ref_data = installReferrer
+                            val timeEnd = ((System.currentTimeMillis() - timeStart) / 1000).toInt()
+                            DualONlineFun.emitPointData("v25proxy", "time", timeEnd)
+                            runCatching {
+                                referrerClient?.installReferrer?.run {
+                                    DualONlineFun.emitInstallData(context, this)
+                                }
+                            }.exceptionOrNull()
+                        }
+                    }
+                    referrerClient.endConnection()
+                }
+
+                override fun onInstallReferrerServiceDisconnected() {
+                }
+            })
+        }.onFailure { e ->
+        }
+    }
+
 }

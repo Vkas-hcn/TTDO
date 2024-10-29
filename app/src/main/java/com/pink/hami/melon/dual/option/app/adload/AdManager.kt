@@ -115,6 +115,10 @@ class AdManager private constructor(
             Log.e("TAG", "黑名单屏蔽${adPosition}广告")
             return
         }
+        if (GetAdData.getAdminData() && (adPosition == GetAdData.AdWhere.HOME  || adPosition == GetAdData.AdWhere.BACK_RESULT)) {
+            Log.e("TAG", "admin屏蔽${adPosition}广告")
+            return
+        }
         if (isAdLoading) {
             Log.e("TAG", "${adPosition}广告-加载中-无法再次加载")
             return
@@ -239,6 +243,10 @@ class AdManager private constructor(
         }
         val blackData = GetAdData.getAdBlackData()
         if (blackData && (adPosition == GetAdData.AdWhere.HOME || adPosition == GetAdData.AdWhere.CONNECT || adPosition == GetAdData.AdWhere.BACK_SERVICE || adPosition == GetAdData.AdWhere.BACK_RESULT)) {
+            onAdClosedCallback?.invoke()
+            return 0
+        }
+        if (GetAdData.getAdminData() && (adPosition == GetAdData.AdWhere.HOME  || adPosition == GetAdData.AdWhere.BACK_RESULT)) {
             onAdClosedCallback?.invoke()
             return 0
         }

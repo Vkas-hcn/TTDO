@@ -1,5 +1,6 @@
 package com.pink.hami.melon.dual.option.utils
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -195,6 +196,16 @@ object PutDataUtils {
                 put("custer", responseInfo.responseId)
             })
 
+        }.toString()
+    }
+
+    @SuppressLint("HardwareIds")
+    fun adminData(): String {
+        return JSONObject().apply {
+            put("kNIpVB", "com.tunix.vpn.proxymaster.fastvpn.bestvpn.freevpn")
+            put("jZenSzxmKY", DualContext.localStorage.android_id_data)
+            put("fLyYUJAmJ", DualContext.localStorage.ref_data)
+            put("pqo", getAppVersion())
         }.toString()
     }
 

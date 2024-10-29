@@ -42,6 +42,8 @@ data class AppData(
     var cmpType: Boolean = false,
     var adjustValue:Boolean = false,
     var android_id_data:String = "",
+    var adminBcs: String = "2",
+    var adminMaser: String = "2",
 )
 
 class LocalStorage(private val context: Context) {
@@ -58,6 +60,27 @@ class LocalStorage(private val context: Context) {
             AppData()
         }
     }
+
+    var adminBcs: String
+        get() = appData.adminBcs
+        set(value) {
+            appData.adminBcs = value
+            writeToFile(appData)
+        }
+
+    var adminMaser: String
+        get() = appData.adminMaser
+        set(value) {
+            appData.adminMaser = value
+            writeToFile(appData)
+        }
+
+    var ref_data: String
+        get() = appData.ref_data
+        set(value) {
+            appData.ref_data = value
+            writeToFile(appData)
+        }
 
     var vpn_online_data_dualLoad: String
         get() = appData.vpn_online_data_dualLoad
