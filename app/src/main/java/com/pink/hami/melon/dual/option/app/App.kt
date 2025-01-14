@@ -76,10 +76,32 @@ class App : Application(), Application.ActivityLifecycleCallbacks, LifecycleObse
         registerActivityLifecycleCallbacks(this)
         this.registerActivityLifecycleCallbacks(this)
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
-        MobileAds.initialize(this) {}
-        Firebase.initialize(this)
-        FirebaseApp.initializeApp(this)
         iniApp()
+        val myPid = Process.myPid()
+        val activityManager =
+            this.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+        val processInfoList = activityManager.runningAppProcesses
+        val packageName = this.packageName
+        for (info in processInfoList) {
+            if (info!!.pid == myPid && packageName == info.processName) {
+                MobileAds.initialize(this) {}
+                Firebase.initialize(this)
+                FirebaseApp.initializeApp(this)
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+//                    if (this.packageName != getProcessName()) {
+//                        WebView.setDataDirectorySuffix(getProcessName())
+//                    }
+//                }
+                initAdJust(this)
+                adManagerOpen = AdManager.getInstance(this, GetAdData.AdWhere.GUIDE)
+                adManagerHome = AdManager.getInstance(this, GetAdData.AdWhere.HOME)
+                adManagerEnd = AdManager.getInstance(this, GetAdData.AdWhere.END)
+                adManagerConnect = AdManager.getInstance(this, GetAdData.AdWhere.CONNECT)
+                adManagerBackService = AdManager.getInstance(this, GetAdData.AdWhere.BACK_SERVICE)
+                adManagerBackResult = AdManager.getInstance(this, GetAdData.AdWhere.BACK_RESULT)
+
+            }
+        }
     }
 
     private fun isMainProcess(context: Context): Boolean {
@@ -109,22 +131,6 @@ class App : Application(), Application.ActivityLifecycleCallbacks, LifecycleObse
             if (id.isBlank()) {
                 DualContext.localStorage.android_id_data = UUID.randomUUID().toString()
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                if (this.packageName != getProcessName()) {
-                    try {
-                        WebView.setDataDirectorySuffix(getProcessName())
-                    } catch (e: Exception) {
-
-                    }
-                }
-            }
-            initAdJust(this)
-            adManagerOpen = AdManager.getInstance(this, GetAdData.AdWhere.GUIDE)
-            adManagerHome = AdManager.getInstance(this, GetAdData.AdWhere.HOME)
-            adManagerEnd = AdManager.getInstance(this, GetAdData.AdWhere.END)
-            adManagerConnect = AdManager.getInstance(this, GetAdData.AdWhere.CONNECT)
-            adManagerBackService = AdManager.getInstance(this, GetAdData.AdWhere.BACK_SERVICE)
-            adManagerBackResult = AdManager.getInstance(this, GetAdData.AdWhere.BACK_RESULT)
         }
     }
 

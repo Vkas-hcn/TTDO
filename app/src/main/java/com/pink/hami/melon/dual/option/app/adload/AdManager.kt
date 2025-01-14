@@ -65,7 +65,6 @@ class AdManager private constructor(
 
     companion object {
         private val instances = mutableMapOf<String, AdManager>()
-
         fun getInstance(application: Application, adPosition: GetAdData.AdWhere): AdManager {
             return instances.getOrPut(adPosition.toString()) {
                 AdManager(application, adPosition)
